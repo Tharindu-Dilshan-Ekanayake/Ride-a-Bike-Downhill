@@ -1,4 +1,4 @@
-import { WORLD_ZONES } from '@shared/balance'
+import { WORLDS } from '@shared/balance'
 import { Color } from 'three'
 
 import { getGame } from '../store/game'
@@ -7,36 +7,31 @@ import { skyUniforms } from './skyState'
 
 /**
  * The world you're in (index into balance WORLDS) and what it changes on screen: the
- * stages the field shows - their names, colours and scenery; every world's gates stand
- * at the same yards - and the sky. GameScene remounts the field when the world changes,
- * so whatever it builds on mount follows; tables derived from the stages are built once
- * per world (`perWorld`) and picked when used.
+ * lobby's venue and sky. GameScene rebuilds what depends on the world when it changes;
+ * tables derived from a world's zones are built once per world (`perWorld`) and picked
+ * when used.
  */
 export const activeWorld = () => getGame().profile.world || 0
 
-/** The current world's stages (ZONES for World 1). */
-export const zones = () => WORLD_ZONES[activeWorld()] ?? WORLD_ZONES[0]
+/** The current world's zones (its mountain road's named stretches). */
+export const zones = () => (WORLDS[activeWorld()] ?? WORLDS[0]).zones
 
 /** `build(zones, world)` for every world, up front; returns a getter for the current one. */
 export function perWorld(build) {
-  const tables = WORLD_ZONES.map((zs, world) => build(zs, world))
+  const tables = WORLDS.map((w, world) => build(w.zones, world))
   return () => tables[activeWorld()] ?? tables[0]
 }
 
-/**
- * A sky's look, parsed once: `{ top, horizon, sun, glow, clouds, stars }` from hex and
- * numbers (sceneStyle SKY's shape; ZONE_THEMES' `sky` too).
- */
+/** A sky's look, parsed once: `{ top, horizon, sun, glow, clouds, stars }` from hex and numbers. */
 export function skyLook({ top, horizon, sun = '#ffffff', glow = 0.5, clouds = 0.4, stars = 0 }) {
   return { top: new Color(top), horizon: new Color(horizon), sun: new Color(sun), glow, clouds, stars }
 }
 
 /**
- * The lobby's sky in each world: World 1's golden-hour game day; Palm Beach's sunset - a
- * violet sky going pink and orange down to the sea, the low sun big and gold over the
- * water, its haze (and the fog) the colour of the sea's horizon.
+ * The lobby's sky in each world: Pine Peak's clear alpine blue; Frost Ridge's pale, icy
+ * sky with a low white sun (its haze, and the fog, the colour of fresh snow).
  */
-const LOBBY_SKIES = [skyLook(SKY), skyLook({ top: '#3d2f8f', horizon: '#ff9f86', sun: '#ffd27a', glow: 1.15, clouds: 0.6, stars: 0 })]
+const LOBBY_SKIES = [skyLook(SKY), skyLook({ top: '#5f9ee8', horizon: '#eef6ff', sun: '#ffffff', glow: 0.75, clouds: 0.85, stars: 0 })]
 export const lobbySky = () => LOBBY_SKIES[activeWorld()] ?? LOBBY_SKIES[0]
 
 /**

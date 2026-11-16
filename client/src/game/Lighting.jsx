@@ -13,14 +13,15 @@ const SUN_DISTANCE = 70
 const SHADOW_EXTENT = 28
 
 /**
- * Golden-hour game-day light: a cool sky fill with a warm bounce off the turf, and a warm,
- * low sun in the north-west (where the sky glows: skyState.sunDirection matches it).
+ * Alpine midday light: a cool sky fill with a warm bounce off the grass, and a bright,
+ * high sun in the north-west (where the sky glows: skyState.sunDirection matches it).
  *
  * Only the HIGH preset casts realtime shadows; lower presets use blob shadows instead
  * (see BlobShadows), so the shadow pass costs nothing there.
  *
  * A directional light's shadow only covers a fixed box around its target, so the sun
- * and its target follow the player, and your ball down the field while it flies.
+ * and its target follow the player in the lobby, and your rider all the way down the
+ * mountain (kilometres away and hundreds of metres below) on a ride.
  */
 export function Lighting() {
   const sunRef = useRef(null)
@@ -51,7 +52,8 @@ export function Lighting() {
   useFrame(() => {
     const sun = sunRef.current
     if (!sun) return
-    const p = runtime.camera.mode === 'roll' ? runtime.flightFocus ?? runtime.player.position : runtime.player.position
+    // In the lobby the shadows centre on you; out on the road, on your rider (flightFocus).
+    const p = runtime.camera.mode !== 'follow' ? runtime.flightFocus ?? runtime.player.position : runtime.player.position
     // Snap to whole units so the shadow map doesn't shimmer as the target slides.
     sun.target.position.set(Math.round(p.x), Math.round(p.y), Math.round(p.z))
     sun.position.copy(sun.target.position).addScaledVector(SUN_DIRECTION, SUN_DISTANCE)

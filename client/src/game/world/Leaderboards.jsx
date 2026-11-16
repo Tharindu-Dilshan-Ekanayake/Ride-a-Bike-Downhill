@@ -22,7 +22,6 @@ const BOARD_H = 7
 const BOARD_BOTTOM = 1.4
 const FONT = '"Fredoka One", "Arial Rounded MT Bold", sans-serif'
 
-
 function drawBoards(ctx, w, h, leaderboards, profile) {
   const colW = w / LEADERBOARDS.length
   ctx.clearRect(0, 0, w, h)
@@ -74,8 +73,8 @@ function drawBoards(ctx, w, h, leaderboards, profile) {
 }
 
 /**
- * The four leaderboards behind the egg plaza. Frames are blocks; all four faces are
- * one quad mesh on one canvas texture, redrawn when the boards update (once a minute).
+ * The four leaderboards along the back of the plaza. Frames are blocks; all four faces
+ * are one quad mesh on one canvas texture, redrawn when the boards update (once a minute).
  */
 export function Leaderboards() {
   const leaderboards = useGame((s) => s.leaderboards)
@@ -145,8 +144,8 @@ export function Leaderboards() {
     return () => {
       cancelled = true
     }
-    // Profile changes constantly while training; offline boards only need the name
-    // and headline stats, which a rebirth or a new best will bring along.
+    // The profile changes after every ride; offline boards only need the name and
+    // headline stats, which a rebirth or a new best will bring along.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assets, playable, leaderboards, profile.rebirths, profile.name])
 

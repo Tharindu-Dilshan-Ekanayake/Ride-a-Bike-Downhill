@@ -1,18 +1,28 @@
-import { TIRES, TUTORIAL, WORLDS } from '@shared/balance'
+import { BIKES, rebirthMultiplier, TUTORIAL, WORLDS } from '@shared/balance'
 import { formatNumber } from '@shared/format'
+import { canRebirth, nextBike } from '@shared/logic'
 
 import { sfx } from '../audio/sfx'
-import { burst, queueTrainFx } from '../game/fx/fxQueue'
+import { burst } from '../game/fx/fxQueue'
+import { onRideGo, onRideResult } from '../game/ride/rideControl'
 import { runtime } from '../game/runtime'
-import { beginRoll, roll } from '../game/roll/rollControl'
 import { getGame } from '../store/game'
 import { fadeThrough } from '../ui/fade'
 import { refreshRemoteWorlds } from './remotePlayers'
 
-/** A point above wherever you're watching: you in the lobby, or your rolling tire. */
+/** A point above you in the lobby, for celebration bursts. */
 const atPlayer = (dy = 1.2) => {
-  const p = roll.active ? roll.position : runtime.player.position
+  const p = runtime.player.position
   return { x: p.x, y: p.y + dy, z: p.z }
+}
+
+/** "+1.2K Coins" for a reward that paid Coins, else nothing. */
+const coinsText = (wins) => (wins > 0 ? ` +${formatNumber(wins)} Coins` : '')
+
+/** The next bike, if you can buy it now (its id), else null. */
+const affordable = (profile) => {
+  const next = nextBike(profile)
+  return next && profile.wins >= next.cost ? next.id : null
 }
 
 /**
@@ -30,38 +40,35 @@ export function handleServerEvent(type, payload) {
       if (game.profileLoaded && payload.profile.rebirths > before.rebirths) {
         sfx.rebirth()
         burst({ ...atPlayer(), count: 60, speed: 9 })
-      } else if (game.profileLoaded && payload.profile.ownedTires.length > before.ownedTires.length) {
-        // A new ball: a shower of confetti and its name up in lights.
+        game.showToast(`REBIRTH ${payload.profile.rebirths}! x${payload.profile.rebirths + 1} Coins on every ride!`)
+      } else if (game.profileLoaded && payload.profile.bikes.length > before.bikes.length) {
+        // A new bike: a shower of confetti and its name up in lights.
         sfx.buy()
         sfx.wins()
         burst({ ...atPlayer(2.5), count: 60, palette: 'confetti', speed: 9 })
-        const tire = TIRES.find((t) => t.id === payload.profile.equippedTire)
-        // The first ball bought ends the tutorial: say so too.
+        const bike = BIKES.find((b) => b.id === payload.profile.bike)
+        // The first bike bought moves the tutorial on: say what's next.
         const done = before.tutorialStep < TUTORIAL.length && payload.profile.tutorialStep >= TUTORIAL.length
-        if (tire) game.showToast(`NEW ARMS: ${tire.name}!${done ? ' Tutorial complete - have fun!' : ''}`)
+        if (bike) game.showToast(`NEW BIKE: ${bike.name}!${done ? ' Tutorial complete - have fun!' : ''}`)
+      } else if (game.profileLoaded && payload.profile.bike !== before.bike) {
+        sfx.buy()
+      } else if (game.profileLoaded && before.tutorialStep >= TUTORIAL.length) {
+        // No guide any more once the tutorial's done: just a five-second nudge the moment
+        // something new comes within reach.
+        const can = affordable(payload.profile)
+        if (can && can !== affordable(before)) game.showToast(`You can buy the ${BIKES.find((b) => b.id === can).name}! Open BIKES`)
+        else if (canRebirth(payload.profile) && !canRebirth(before)) game.showToast(`REBIRTH READY! x${rebirthMultiplier(payload.profile.rebirths + 1)} Coins forever`)
       }
       break
     }
 
-    case 'train':
-      game.patchProfile({
-        health: payload.health,
-        level: payload.level,
-        // Gains from rolling and walking aren't pad training.
-        ...(payload.source === 'pad' ? { lastPad: payload.pad } : {}),
-      })
-      queueTrainFx(payload)
-      if (payload.leveledUp) {
-        sfx.levelUp()
-        burst({ ...atPlayer(1.8), count: 24, palette: 'power', speed: 6 })
-      }
+    case 'rideGo':
+      onRideGo(payload)
       break
 
-    case 'roll': {
-      // (How well you let go shows as you shoot past the posts: rollControl.)
-      beginRoll(payload)
+    case 'ride':
+      onRideResult(payload)
       break
-    }
 
     case 'quest':
       // One of today's quests finished: a chime and a nudge to claim it.
@@ -72,62 +79,30 @@ export function handleServerEvent(type, payload) {
     case 'streak':
       // Played past midnight: the streak's next day starts now.
       sfx.wins()
-      game.showToast(`DAY ${payload.days} STREAK! x${payload.multiplier.toFixed(1)} Wins on every launch`)
-      break
-
-    case 'pack':
-      sfx.buy()
-      burst({ ...atPlayer(2), count: 30, palette: 'power', speed: 7 })
-      break
-
-    case 'hatch':
-      game.setHatch({ eggId: payload.eggId, pets: payload.pets, id: Date.now() })
-      if (payload.eggId) {
-        setTimeout(sfx.crack, 1100)
-        setTimeout(sfx.reveal, 1250)
-      } else {
-        sfx.reveal()
-      }
-      break
-
-    case 'offline':
-      game.openPanel('offline', payload)
+      game.showToast(`DAY ${payload.days} STREAK! x${payload.multiplier.toFixed(1)} Coins on every ride`)
       break
 
     case 'badge':
-      // (After the moment it was earned in - usually a launch - so that frame stays light.)
+      // After the moment it was earned in (usually a ride's end), so that frame stays light.
       setTimeout(() => sfx.wins(), 1200)
       break
 
-    case 'star': {
-      // Palm Beach's Secret Star, found: a shower of gold and the news.
-      sfx.wins()
-      sfx.levelUp()
-      burst({ ...atPlayer(2), count: 70, palette: 'gold', speed: 10 })
-      game.showToast('SECRET STAR FOUND! x2 POWER FOREVER!')
-      break
-    }
-
     case 'world': {
-      // Through the portal: a flash of white while the new world's sky and track go
-      // in (GameScene follows profile.world), and a fanfare.
+      // Through the portal: a flash of white while the new world's sky and road go in
+      // (GameScene follows profile.world), and a fanfare.
       fadeThrough(() => {})
       sfx.rebirth()
       burst({ ...atPlayer(2), count: 60, palette: 'confetti', speed: 9 })
       const world = WORLDS[payload.world]
-      game.showToast(
-        payload.world === 1
-          ? `WELCOME TO ${world.name.toUpperCase()}! x${world.wins} Wins on every launch!${payload.first ? ' A Secret Star is hidden here...' : ''}`
-          : `Back in ${world.name}!`,
-      )
+      game.showToast(payload.world === 1 ? `WELCOME TO ${world.name.toUpperCase()}! x${world.pay} Coins on this mountain!` : `Back on ${world.name}!`)
       break
     }
 
     case 'reward':
-      // A rewarded ad or a Gems purchase landed.
+      // A rewarded ad, a Gems purchase, a gift or a quest landed.
       sfx.buy()
       burst({ ...atPlayer(2), count: 40, palette: 'gold', speed: 8 })
-      game.showToast(`${payload.label}${payload.wins ? ` +${formatNumber(payload.wins)} Wins` : ''}!`)
+      game.showToast(`${payload.label}${coinsText(payload.wins)}!`)
       break
 
     default:

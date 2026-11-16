@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { crowdBonus, streakMultiplier } from '@shared/balance'
-import { formatClock, formatNumber } from '@shared/format'
+import { formatNumber } from '@shared/format'
 import { streakDays } from '@shared/logic'
 
 import { remotePlayers } from '../../net/remotePlayers'
@@ -14,34 +14,13 @@ import { GRADIENTS, u } from './style'
 function StatRow({ icon, value, gradient }) {
   return (
     <div className="relative flex items-center" style={{ height: u(86) }}>
-      <Icon name={icon} size={u(86)} className="relative" />
+      <Icon name={icon} size={u(80)} className="relative" />
       {/* Keyed on the value: every change replays a little bump. */}
-      <span key={value} className="pp-bump relative" style={{ fontSize: u(64), marginLeft: u(8) }}>
+      <span key={value} className="pp-bump relative" style={{ fontSize: u(64), marginLeft: u(10) }}>
         <StrokeText stroke={u(12)} gradient={gradient}>
           {value}
         </StrokeText>
       </span>
-    </div>
-  )
-}
-
-/** Active potion timers, shown under the stats while a boost runs. */
-function Boosts() {
-  const boosts = useGame((s) => s.profile.boosts)
-  const now = useNow(1000)
-  const active = [
-    ['potionHealth', boosts.health],
-    ['potionWins', boosts.wins],
-  ].filter(([, end]) => end > now)
-  if (active.length === 0) return null
-  return (
-    <div className="flex" style={{ gap: u(10), marginTop: u(4) }}>
-      {active.map(([icon, end]) => (
-        <div key={icon} className="flex items-center" style={{ fontSize: u(28) }}>
-          <Icon name={icon} size={u(54)} />
-          <StrokeText stroke={u(6)}>{formatClock(end - now)}</StrokeText>
-        </div>
-      ))}
     </div>
   )
 }
@@ -63,7 +42,7 @@ function Chip({ icon, text, bonus }) {
 let streakToastShown = false
 
 /**
- * The login streak (days in a row and the Wins it adds), and the friends bonus while
+ * The login streak (days in a row and the Coins it adds), and the friends bonus while
  * others share your server. Says today's streak news once, a moment after the game is up.
  */
 function Bonuses() {
@@ -78,9 +57,9 @@ function Bonuses() {
     if (!news || streakToastShown) return undefined
     streakToastShown = true
     const id = setTimeout(() => {
-      if (news.broke) showToast('Your streak ended... DAY 1 again - play tomorrow for x1.1 Wins!')
-      else if (news.days >= 2) showToast(`DAY ${news.days} STREAK! x${news.multiplier.toFixed(1)} Wins on every launch today!`)
-      else showToast('DAY 1 STREAK! Come back tomorrow for x1.1 Wins on every launch!')
+      if (news.broke) showToast('Your streak ended... DAY 1 again - play tomorrow for x1.1 Coins!')
+      else if (news.days >= 2) showToast(`DAY ${news.days} STREAK! x${news.multiplier.toFixed(1)} Coins on every ride today!`)
+      // Day 1 says nothing: the tutorial has the floor on a first visit.
     }, 2500)
     return () => clearTimeout(id)
   }, [news, showToast])
@@ -93,16 +72,15 @@ function Bonuses() {
   )
 }
 
-/** Top-left, as in the reference: Rebirths, then Wins, with any running potions and bonuses under them. */
+/** Top-left: Rebirths, then Coins, with your streak and friends bonuses under them. */
 export function StatsPanel() {
-  const wins = useGame((s) => s.profile.wins - s.pendingWins)
+  const wins = useGame((s) => s.profile.wins)
   const rebirths = useGame((s) => s.profile.rebirths)
 
   return (
     <div className="hud-stats pointer-events-none absolute flex flex-col" style={{ contain: 'layout style' }}>
       <StatRow icon="rebirth" value={formatNumber(rebirths)} />
-      <StatRow icon="trophy" value={formatNumber(wins)} gradient={GRADIENTS.gold} />
-      <Boosts />
+      <StatRow icon="coin" value={formatNumber(wins)} gradient={GRADIENTS.gold} />
       <Bonuses />
     </div>
   )

@@ -2,9 +2,7 @@ import { reportedAnim } from '../bloxity/emotes'
 import { environment } from '../bloxity/env'
 import { GAME_SLUG, joinToken } from '../bloxity/identity'
 import { getSDK, safeCall, waitForSDK } from '../bloxity/sdk'
-import { LAUNCH_STAND } from '@shared/world'
 
-import { meterAtZ } from '../game/roll/path'
 import { runtime } from '../game/runtime'
 import { getGame } from '../store/game'
 import { setTransport } from './actions'
@@ -64,7 +62,7 @@ async function findDevServer() {
   for (const port of DEV_PORTS) candidates.push(`${window.location.protocol}//${window.location.hostname}:${port}`)
   for (const url of new Set(candidates)) {
     const health = await healthOf(url)
-    if (health?.ok && health.game === '1-arm-length') return url
+    if (health?.ok && health.game === 'ride-a-bike-downhill') return url
   }
   return null
 }
@@ -222,25 +220,8 @@ function attachRoom(room, identity, Callbacks, endpoint, gen) {
       case 'correct':
         runtime.player.position.set(payload.x, payload.y, payload.z)
         break
-      case 'stock':
-        getGame().setSphinxStock(payload.sphinx)
-        break
       case 'leaderboards':
         getGame().setLeaderboards(payload)
-        break
-      case 'ghostRoll':
-        // Never your own launch (you're flying already), and only launches down your
-        // world's runway. Their avatar replays it (remote/): from the launch posts, as far
-        // back as they'd walked.
-        if (payload.sid === room.sessionId) break
-        if ((payload.world || 0) !== (getGame().profile.world || 0)) break
-        runtime.ghostRolls.set(payload.sid, {
-          ...payload,
-          fromMeter: meterAtZ(LAUNCH_STAND.z),
-          startX: LAUNCH_STAND.x,
-          pull: Math.max(0, payload.z - LAUNCH_STAND.z),
-          startedAt: performance.now(),
-        })
         break
       case 'kicked':
         leaving = true
@@ -285,6 +266,7 @@ function attachRoom(room, identity, Callbacks, endpoint, gen) {
     const now = performance.now()
     const moved = Math.abs(p.x - last.x) + Math.abs(p.y - last.y) + Math.abs(p.z - last.z) > 0.03
     if (!moved && a === last.a && now - lastSentAt < 1000) return
+    // Riding, your logical position stays put in the lobby (ride positions go as ridePos).
     last = { x: p.x, y: p.y, z: p.z, a }
     lastSentAt = now
     room.send('pos', { x: p.x, y: p.y, z: p.z, r: runtime.player.yaw, a })

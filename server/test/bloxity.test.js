@@ -47,7 +47,7 @@ test('Boxity URLs come from the environment, production only as the fallback', (
   assert.equal(local.matchmakerUrl, 'https://play.bloxity.io')
   assert.equal(local.portalUrl, 'https://bloxity.io')
   assert.equal(local.staticUrl, 'https://static.bloxity.io')
-  assert.equal(local.gameSlug, '1-arm-length')
+  assert.equal(local.gameSlug, 'ride-a-bike-downhill')
   assert.equal(local.hosted, false)
   assert.equal(hosted.apiUrl, 'https://api.stage.example', 'trailing slash trimmed')
   assert.equal(hosted.gameSlug, 'tire')
@@ -165,12 +165,12 @@ test('the webhook secret must match exactly when one is set', () => {
 })
 
 test('webhook bodies are checked: known sku, ids, legion_ prefix stripped', () => {
-  const ok = parseGemWebhook({ transactionId: 't1', userId: 'legion_acc1', sku: 'wins_small', productPrice: 50 })
+  const ok = parseGemWebhook({ transactionId: 't1', userId: 'legion_acc1', sku: 'coins_small', productPrice: 50 })
   assert.equal(ok.ok, true)
   assert.equal(ok.grant.userId, 'acc1')
   assert.equal(profileIdOf('acc2'), 'acc2')
   assert.equal(parseGemWebhook({ transactionId: 't1', userId: 'acc1', sku: 'nope' }).status, 400)
-  assert.equal(parseGemWebhook({ userId: 'acc1', sku: 'wins_small' }).status, 400)
+  assert.equal(parseGemWebhook({ userId: 'acc1', sku: 'coins_small' }).status, 400)
   assert.equal(parseGemWebhook(null).ok, false)
 })
 
@@ -180,7 +180,7 @@ before(() => openStorage({ path: ':memory:' }))
 after(() => closeStorage())
 
 test('a Gems grant is recorded once and claimed once', async () => {
-  const grant = { transactionId: 'txn-1', userId: 'acc1', sku: 'wins_small' }
+  const grant = { transactionId: 'txn-1', userId: 'acc1', sku: 'coins_small' }
   assert.equal(await recordGemGrant(grant), true)
   assert.equal(await recordGemGrant(grant), false, 'a repeated webhook is a no-op')
   assert.deepEqual(await pendingGemGrants(['acc1', 'other']), [grant])
@@ -219,11 +219,11 @@ test('a pod applies grants to the verified players it holds, exactly once', asyn
   const room = { members: new Map([['s5', member]]), syncPlayer: () => {} }
   activePlayers.set('acc5', { room, client: { sessionId: 's5' } })
   try {
-    await recordGemGrant({ transactionId: 'txn-5', userId: 'acc5', sku: 'health_x2' })
+    await recordGemGrant({ transactionId: 'txn-5', userId: 'acc5', sku: 'wins_x2' })
     await Promise.all([applyGemsFor(['acc5']), applyGemsFor(['acc5'])])
-    assert.equal(profile.passes.healthX2, true)
+    assert.equal(profile.passes.winsX2, true)
     assert.equal(profile.wins, 0, 'applied once, not turned into Wins by a second copy')
-    assert.equal((await loadProfile('acc5', 'Five', 'test')).passes.healthX2, true, 'saved')
+    assert.equal((await loadProfile('acc5', 'Five', 'test')).passes.winsX2, true, 'saved')
     assert.deepEqual(await pendingGemGrants(['acc5']), [])
   } finally {
     activePlayers.delete('acc5')

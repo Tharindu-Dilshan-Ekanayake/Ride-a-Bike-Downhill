@@ -90,7 +90,7 @@ function QuestCard({ quest, index, profile }) {
       </div>
       <div className="flex flex-col items-center" style={{ gap: u(8) }}>
         <div className="flex items-center" style={{ gap: u(6), fontSize: u(30) }}>
-          <Icon name="trophy" size={u(44)} />
+          <Icon name="coin" size={u(44)} />
           <StrokeText stroke={u(6)} gradient={GRADIENTS.gold}>
             +{formatNumber(reward.wins)}
           </StrokeText>
@@ -118,8 +118,8 @@ function StreakCard({ profile, now }) {
         <span style={{ fontSize: u(28) }}>
           <StrokeText stroke={u(6)} style={{ whiteSpace: 'normal' }}>
             {maxed
-              ? `MAX STREAK: x${mult.toFixed(1)} Wins on every launch! Keep it going every day.`
-              : `x${mult.toFixed(1)} Wins on every launch - come back tomorrow for x${next.toFixed(1)}! Miss a day and it starts again.`}
+              ? `MAX STREAK: x${mult.toFixed(1)} Coins on every ride! Keep it going every day.`
+              : `x${mult.toFixed(1)} Coins on every ride - come back tomorrow for x${next.toFixed(1)}! Miss a day and it starts again.`}
           </StrokeText>
         </span>
       </div>
@@ -164,11 +164,11 @@ export function QuestsPanel() {
           </div>
           <div className="flex flex-col items-center" style={{ gap: u(8) }}>
             <div className="flex items-center" style={{ gap: u(6), fontSize: u(30) }}>
-              <Icon name="trophy" size={u(44)} />
+              <Icon name="coin" size={u(44)} />
               <StrokeText stroke={u(6)} gradient={GRADIENTS.gold}>
                 +{formatNumber(bonus.wins)}
               </StrokeText>
-              <RewardIcon icon="egg:unicorn" size={u(48)} />
+              {bonus.item && <RewardIcon icon={bonus.item} size={u(48)} />}
             </div>
             <ClaimButton state={quests.bonus ? 'claimed' : allClaimed ? 'ready' : 'locked'} label="Locked" onClaim={actions.claimQuestBonus} />
           </div>

@@ -49,37 +49,6 @@ const trophy = svg(
   vgrad('tr-g', GOLD),
 )
 
-const muscle = svg(
-  `<path d="M14 88V64c0-20 22-30 38-14l4 3V34c-3-6-3-14 3-19 7-6 19-6 25 2 5 7 5 16-1 21l1 34c0 10-8 17-18 17z" fill="url(#mu-g)" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
-  <path d="M56 53c4 3 9 3 13-1" fill="none" stroke="${OUT}" stroke-width="5" stroke-linecap="round"/>
-  <path d="M62 24c3-3 8-4 12-2" fill="none" stroke="${OUT}" stroke-width="4" stroke-linecap="round"/>
-  <path d="M22 70c2-9 10-14 20-11" fill="none" stroke="#fff6c4" stroke-width="5" stroke-linecap="round" opacity=".85"/>
-  <path d="M64 15c4-2 9-1 12 1" fill="none" stroke="#fff6c4" stroke-width="4" stroke-linecap="round" opacity=".85"/>`,
-  vgrad('mu-g', [
-    [0, '#ffd84a'],
-    [0.6, '#ffa21c'],
-    [1, '#f07a00'],
-  ]),
-)
-
-const pets = svg(
-  `<path d="M17 40L22 8l24 22zM83 40L78 8 54 30z" fill="url(#pt-o)" stroke="${OUT}" stroke-width="5.5" stroke-linejoin="round"/>
-  <path d="M24 34l2-15 11 10zM76 34l-2-15-11 10z" fill="#ffc2c9"/>
-  <rect x="10" y="24" width="80" height="68" rx="18" fill="url(#pt-o)" stroke="${OUT}" stroke-width="6"/>
-  <path d="M38 26l3 10M50 25v11M62 26l-3 10" stroke="#c94a00" stroke-width="5" stroke-linecap="round"/>
-  <ellipse cx="50" cy="74" rx="22" ry="14" fill="#fff4e6" stroke="${OUT}" stroke-width="4"/>
-  <ellipse cx="33" cy="55" rx="8" ry="10" fill="${OUT}"/><ellipse cx="67" cy="55" rx="8" ry="10" fill="${OUT}"/>
-  <circle cx="30" cy="51" r="3.4" fill="#fff"/><circle cx="64" cy="51" r="3.4" fill="#fff"/>
-  <path d="M45 66h10l-5 5z" fill="#ff6f8f" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M42 76c4 4 12 4 16 0" fill="none" stroke="${OUT}" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M46 78c0 9 8 9 8 0" fill="#ff5f84" stroke="${OUT}" stroke-width="3"/>
-  <path d="M18 44c1-9 6-14 14-16" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" opacity=".55"/>`,
-  vgrad('pt-o', [
-    [0, '#ffb14a'],
-    [1, '#ff7414'],
-  ]),
-)
-
 const items = svg(
   `<path d="M34 22c0-14 32-14 32 0" fill="none" stroke="${OUT}" stroke-width="13" stroke-linecap="round"/>
   <path d="M34 22c0-14 32-14 32 0" fill="none" stroke="#c4192c" stroke-width="5" stroke-linecap="round"/>
@@ -142,47 +111,6 @@ const star = svg(
   `<path d="M50 8l12 25 27 4-20 19 5 27-24-13-24 13 5-27-20-19 27-4z" fill="#ffffff" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>`,
 )
 
-/**
- * Power (the code's `health`): a chunky lightning bolt, glossy yellow with a white shine.
- * Still named `heart`, so every place that showed Health shows Power.
- */
-const heart = svg(
-  `<path d="M58 6L18 56h24l-8 38 48-54H56z" fill="url(#ht-g)" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
-  <path d="M52 16L28 48" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".8"/>`,
-  vgrad('ht-g', [
-    [0, '#fffbd0'],
-    [0.45, '#ffd21f'],
-    [1, '#ff8a00'],
-  ]),
-)
-
-/**
- * A rubber arm at full stretch: a long pink arm snaking up from the bottom left, ringed
- * like a rubber band, ending in a big golden fist, with speed marks where it's pulled -
- * in a thick ink outline. Still named `tire`, so every place that showed the template's
- * tire (the LAUNCH button, the shop, the passes, the loading screen) shows the arm.
- */
-const STRETCH = 'M16 88C20 62 50 72 48 50S60 32 66 31'
-const tire = svg(
-  `<path d="${STRETCH}" fill="none" stroke="${OUT}" stroke-width="25" stroke-linecap="round"/>
-  <path d="${STRETCH}" fill="none" stroke="url(#ar-g)" stroke-width="15" stroke-linecap="round"/>
-  <path d="${STRETCH}" fill="none" stroke="#fff" stroke-width="15" stroke-dasharray="4 10" opacity=".5"/>
-  <circle cx="73" cy="27" r="17" fill="url(#ar-f)" stroke="${OUT}" stroke-width="6"/>
-  <path d="M66 12l3 8M74 10v10M82 12l-3 8" fill="none" stroke="${OUT}" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M61 20q2-6 6-8" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>
-  <path d="M6 60l10 4M7 73l10 1M30 94l3-9" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="M6 60l10 4M7 73l10 1M30 94l3-9" stroke="${OUT}" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>`,
-  vgrad('ar-g', [
-    [0, '#ffa3dc'],
-    [1, '#e2318c'],
-  ]) +
-    vgrad('ar-f', [
-      [0, '#fff0a0'],
-      [0.5, '#ffcf2e'],
-      [1, '#f08c00'],
-    ]),
-)
-
 /** A round potion flask with a cork, filled with `liquid` and a small badge icon. */
 function potion(id, liquid, liquidDark, badge) {
   return svg(
@@ -198,33 +126,123 @@ function potion(id, liquid, liquidDark, badge) {
   )
 }
 
-const potionWins = potion(
-  'pw',
-  '#4fd2ff',
-  '#1565e0',
-  `<path d="M38 62h24v6c0 7-5 12-12 12s-12-5-12-12z" fill="#ffd23a" stroke="${OUT}" stroke-width="3.5" stroke-linejoin="round"/>
-   <rect x="42" y="80" width="16" height="6" rx="2" fill="#ffd23a" stroke="${OUT}" stroke-width="3"/>`,
-)
-const potionHealth = potion(
-  'ph',
-  '#ff8aa4',
-  '#d4142a',
-  `<path d="M50 84c-3-3-14-10-15-18-1-5 3-9 7-9 3 0 6 2 8 5 2-3 5-5 8-5 4 0 8 4 7 9-1 8-12 15-15 18z" fill="#ffffff" stroke="${OUT}" stroke-width="3.5" stroke-linejoin="round"/>`,
+const COIN_BADGE = `<circle cx="50" cy="72" r="13" fill="#ffd23a" stroke="${OUT}" stroke-width="3.5"/>
+   <path d="M50 64l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" fill="#fff6b8" stroke="#d98900" stroke-width="1.5" stroke-linejoin="round"/>`
+
+const potionWins = potion('pw', '#ffe14a', '#f08c00', COIN_BADGE)
+const potionBoost = potion(
+  'pb',
+  '#7ff0ff',
+  '#1a7ae0',
+  `<path d="M54 58L40 76h9l-3 12 15-19h-9z" fill="#ffe14a" stroke="${OUT}" stroke-width="3.5" stroke-linejoin="round"/>`,
 )
 
-/** A spotted egg in the given colours. */
-export function eggSvg(base, dark, spot) {
+/** A gold coin with a star struck into it: the game's currency. */
+const coin = svg(
+  `<circle cx="50" cy="50" r="42" fill="url(#co-g)" stroke="${OUT}" stroke-width="6"/>
+  <circle cx="50" cy="50" r="31" fill="none" stroke="#d98900" stroke-width="4"/>
+  <path d="M50 27l7 14.2 15.6 2.3-11.3 11 2.7 15.5L50 62.7 36 70l2.7-15.5-11.3-11 15.6-2.3z" fill="#fff3a0" stroke="#d98900" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M22 40c3-10 10-17 20-20" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".8"/>`,
+  vgrad('co-g', GOLD),
+)
+
+/** A bike side-on: two wheels and a frame in `color` (the bike's own paint). */
+export function bikeSvg(color = '#38bdf8', accent = '#ffffff') {
   return svg(
-    `<path d="M50 6C28 6 12 40 12 62c0 20 17 32 38 32s38-12 38-32C88 40 72 6 50 6z" fill="url(#eg-g)" stroke="${OUT}" stroke-width="6"/>
-    <ellipse cx="34" cy="50" rx="7" ry="9" fill="${spot}"/><ellipse cx="62" cy="34" rx="6" ry="7" fill="${spot}"/>
-    <ellipse cx="66" cy="68" rx="9" ry="8" fill="${spot}"/><ellipse cx="44" cy="80" rx="5" ry="4" fill="${spot}"/>
-    <path d="M26 46c2-14 10-26 18-30" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>`,
-    vgrad('eg-g', [
-      [0, base],
-      [1, dark],
-    ]),
+    `<g fill="none" stroke="${OUT}" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="24" cy="66" r="18" stroke-width="10"/><circle cx="76" cy="66" r="18" stroke-width="10"/>
+      <path d="M24 66l16-30h30l6 30M40 36l14 30h-30M54 66l16-30M68 24h10M40 36l-4-10h-8" stroke-width="12"/>
+    </g>
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="24" cy="66" r="18" stroke="#3a4150" stroke-width="5"/><circle cx="76" cy="66" r="18" stroke="#3a4150" stroke-width="5"/>
+      <circle cx="24" cy="66" r="11" stroke="#cfd6df" stroke-width="2"/><circle cx="76" cy="66" r="11" stroke="#cfd6df" stroke-width="2"/>
+      <path d="M24 66l16-30h30l6 30M40 36l14 30h-30M54 66l16-30" stroke="${color}" stroke-width="6"/>
+      <path d="M68 24h10" stroke="${accent}" stroke-width="6"/>
+      <path d="M40 36l-4-10h-8" stroke="${accent}" stroke-width="6"/>
+    </g>
+    <circle cx="54" cy="66" r="5" fill="#cfd6df" stroke="${OUT}" stroke-width="3"/>`,
   )
 }
+const bike = bikeSvg()
+
+/** Boost: an electric-blue bolt with speed streaks. */
+const boost = svg(
+  `<path d="M8 40h18M4 56h16M10 72h14" stroke="${OUT}" stroke-width="9" stroke-linecap="round"/>
+  <path d="M8 40h18M4 56h16M10 72h14" stroke="#bff6ff" stroke-width="4" stroke-linecap="round"/>
+  <path d="M64 4L26 56h22l-8 40 46-56H62z" fill="url(#bo-g)" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M58 14L38 46" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".85"/>`,
+  vgrad('bo-g', [
+    [0, '#e4fdff'],
+    [0.45, '#3fd0ff'],
+    [1, '#1a62e8'],
+  ]),
+)
+
+/** Income: a stack of green notes with a coin on top. */
+const income = svg(
+  `<rect x="8" y="46" width="70" height="38" rx="6" fill="#2fae4a" stroke="${OUT}" stroke-width="6" transform="rotate(-8 43 65)"/>
+  <rect x="16" y="34" width="70" height="38" rx="6" fill="url(#in-g)" stroke="${OUT}" stroke-width="6"/>
+  <circle cx="51" cy="53" r="10" fill="none" stroke="#1d7a34" stroke-width="4"/>
+  <path d="M24 42h10M68 64h10" stroke="#1d7a34" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="76" cy="26" r="17" fill="#ffd23a" stroke="${OUT}" stroke-width="5"/>
+  <path d="M76 17l3.4 7 7.6 1.1-5.5 5.4 1.3 7.6-6.8-3.6-6.8 3.6 1.3-7.6-5.5-5.4 7.6-1.1z" fill="#fff3a0" stroke="#d98900" stroke-width="2" stroke-linejoin="round"/>`,
+  vgrad('in-g', [
+    [0, '#9dffa8'],
+    [1, '#35c454'],
+  ]),
+)
+
+/** The Coin Magnet: a red horseshoe with silver tips. */
+const magnet = svg(
+  `<path d="M18 12h22v36c0 6 4 10 10 10s10-4 10-10V12h22v36c0 18-14 32-32 32S18 66 18 48z" fill="url(#ma-g)" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M18 12h22v14H18zM60 12h22v14H60z" fill="#e8eef6" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M26 54c2 10 8 16 16 18" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+  <path d="M86 70l8 4M84 84l8 8M70 92l2 6" stroke="${OUT}" stroke-width="4" stroke-linecap="round"/>`,
+  vgrad('ma-g', [
+    [0, '#ff7a7a'],
+    [1, '#d4142a'],
+  ]),
+)
+
+/** CAM: a chunky camera. */
+const camera = svg(
+  `<path d="M34 22h32l6 10h14c4 0 6 2 6 6v42c0 4-2 6-6 6H14c-4 0-6-2-6-6V38c0-4 2-6 6-6h14z" fill="url(#ca-g)" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="50" cy="58" r="20" fill="#2c344d" stroke="${OUT}" stroke-width="6"/>
+  <circle cx="50" cy="58" r="10" fill="#7fe2ff"/>
+  <circle cx="45" cy="53" r="4" fill="#fff"/>
+  <rect x="74" y="40" width="10" height="6" rx="2" fill="#ffd23a"/>`,
+  vgrad('ca-g', [
+    [0, '#e8eef6'],
+    [1, '#9aa6b8'],
+  ]),
+)
+
+/** The finish: a chequered flag on a pole. */
+const FLAG_SQUARES = Array.from({ length: 12 }, (_, i) => {
+  const col = i % 4
+  const row = Math.floor(i / 4)
+  return (col + row) % 2 === 0 ? `<rect x="${30 + col * 14}" y="${12 + row * 13}" width="14" height="13" fill="${OUT}"/>` : ''
+}).join('')
+const flag = svg(
+  `<rect x="18" y="8" width="9" height="88" rx="4" fill="#cfd6df" stroke="${OUT}" stroke-width="5"/>
+  <path d="M28 10h58v41H28z" fill="#ffffff" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
+  ${FLAG_SQUARES}
+  <path d="M28 10h58v41H28z" fill="none" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>`,
+)
+
+/** Speed: a dial with its needle well round. */
+const speed = svg(
+  `<path d="M10 70a40 40 0 0 1 80 0" fill="url(#sd-g)" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M10 70h80" stroke="${OUT}" stroke-width="6" stroke-linecap="round"/>
+  <path d="M22 66a28 28 0 0 1 8-20M40 40a28 28 0 0 1 20 0M70 46a28 28 0 0 1 8 20" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M50 68L76 40" stroke="${OUT}" stroke-width="10" stroke-linecap="round"/>
+  <path d="M50 68L76 40" stroke="#ff3b3b" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="50" cy="68" r="8" fill="#ffd23a" stroke="${OUT}" stroke-width="4"/>`,
+  vgrad('sd-g', [
+    [0, '#4a5778'],
+    [1, '#2c344d'],
+  ]),
+)
 
 const close = svg(
   `<path d="M24 24l52 52M76 24L24 76" stroke="${OUT}" stroke-width="22" stroke-linecap="round"/>
@@ -314,7 +332,64 @@ const friends = svg(
   <path d="M44 84c0-18 9-30 22-30s24 12 24 30z" fill="#ff6ab8" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>`,
 )
 
+const wrench = svg(
+  `<path d="M70 14a20 20 0 0 0-19 27L16 76a9 9 0 0 0 13 13l35-35a20 20 0 0 0 27-19l-12 7-10-4-4-10z" fill="url(#wr-g)" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="23" cy="82" r="4" fill="${OUT}"/>`,
+  vgrad('wr-g', [
+    [0, '#f4f7fb'],
+    [0.5, '#b9c3cf'],
+    [1, '#7d8794'],
+  ]),
+)
+
+const globe = svg(
+  `<circle cx="50" cy="50" r="38" fill="url(#gl-g)" stroke="${OUT}" stroke-width="6"/>
+  <path d="M30 26c10 4 8 14 18 14s6 14-4 16-10 10-6 18M66 20c-4 8 6 10 4 18s10 6 14 12M60 66c6-2 12 2 14 8" fill="none" stroke="#2f9e48" stroke-width="7" stroke-linecap="round"/>
+  <path d="M30 22c-8 6-14 16-16 26M80 70c-6 8-14 14-24 16" fill="none" stroke="#ffffff" stroke-opacity="0.6" stroke-width="4" stroke-linecap="round"/>`,
+  vgrad('gl-g', [
+    [0, '#9fe6ff'],
+    [1, '#2f7fe0'],
+  ]),
+)
+
+const tires = svg(
+  `<circle cx="50" cy="50" r="38" fill="#2b2f3a" stroke="${OUT}" stroke-width="6"/>
+  <circle cx="50" cy="50" r="22" fill="url(#ti-g)" stroke="${OUT}" stroke-width="5"/>
+  <path d="M50 12v10M50 78v10M12 50h10M78 50h10M23 23l7 7M70 70l7 7M77 23l-7 7M30 70l-7 7" stroke="#5b6272" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="50" cy="50" r="6" fill="${OUT}"/>`,
+  vgrad('ti-g', [
+    [0, '#eef2f7'],
+    [1, '#9aa4b2'],
+  ]),
+)
+
+const suspension = svg(
+  `<rect x="40" y="8" width="20" height="14" rx="4" fill="#5b6272" stroke="${OUT}" stroke-width="5"/>
+  <rect x="40" y="78" width="20" height="14" rx="4" fill="#5b6272" stroke="${OUT}" stroke-width="5"/>
+  <path d="M30 26l40 8-40 8 40 8-40 8 40 8-40 8" fill="none" stroke="${OUT}" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M30 26l40 8-40 8 40 8-40 8 40 8-40 8" fill="none" stroke="url(#su-g)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>`,
+  vgrad('su-g', [
+    [0, '#fff27a'],
+    [1, '#ff9a0a'],
+  ]),
+)
+
+const gears = svg(
+  `<path d="M44 8h12l2 11 8 4 9-7 9 9-7 9 4 8 11 2v12l-11 2-4 8 7 9-9 9-9-7-8 4-2 11H44l-2-11-8-4-9 7-9-9 7-9-4-8-11-2V44l11-2 4-8-7-9 9-9 9 7 8-4z" fill="url(#ge-g)" stroke="${OUT}" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="50" cy="50" r="13" fill="#2b2f3a" stroke="${OUT}" stroke-width="5"/>`,
+  vgrad('ge-g', [
+    [0, '#b4efff'],
+    [0.5, '#4cb8ff'],
+    [1, '#2477e8'],
+  ]),
+)
+
 export const ICON_SVGS = {
+  wrench,
+  globe,
+  tires,
+  suspension,
+  gears,
   quest,
   flame,
   friends,
@@ -323,45 +398,42 @@ export const ICON_SVGS = {
   starGold,
   fastForward,
   trophy,
-  muscle,
-  pets,
   items,
   store,
   calendar,
   star,
   settings,
-  heart,
-  tire,
   potionWins,
-  potionHealth,
+  potionBoost,
+  coin,
+  bike,
+  boost,
+  income,
+  magnet,
+  camera,
+  flag,
+  speed,
   close,
   arrowDown,
   check,
   portal,
 }
 
-/** Egg colours by egg id, shared by the icons and the 3D eggs. */
-export const EGG_COLORS = {
-  basic: ['#ffffff', '#cdd6e2', '#e2e8f0'],
-  meadow: ['#7cf08a', '#2fae4a', '#c8ffd0'],
-  sunset: ['#ffc07a', '#ff6a3d', '#ffe2b8'],
-  unicorn: ['#f6eaff', '#d3b4ff', '#ffd1f0'],
-  volcano: ['#5a3a30', '#2a1814', '#ff6a14'],
-  // Sandy shell with blue waves, like the 3D Beach Egg (EggDisplays).
-  beach: ['#fff3dc', '#2fb8e0', '#bff4ff'],
-}
-
 const urlCache = new Map()
 
-/** `data:` URL for an icon name, or `egg:<id>` for an egg. */
+/**
+ * `data:` URL for an icon name, or for `bike:<color>[:<accent>]` a bike in that paint.
+ * Unknown names give null (Icon draws nothing).
+ */
 export function iconUrl(name) {
+  if (typeof name !== 'string' || !name) return null
   if (IMAGE_ICONS[name]) return IMAGE_ICONS[name]
   let url = urlCache.get(name)
   if (url) return url
   let markup = ICON_SVGS[name]
-  if (!markup && name.startsWith('egg:')) {
-    const colors = EGG_COLORS[name.slice(4)] || EGG_COLORS.basic
-    markup = eggSvg(...colors)
+  if (!markup && name.startsWith('bike:')) {
+    const [, color, accent] = name.split(':')
+    markup = bikeSvg(color, accent)
   }
   if (!markup) return null
   url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`

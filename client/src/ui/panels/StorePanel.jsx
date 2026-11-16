@@ -1,40 +1,30 @@
 import { useState } from 'react'
 
-import { AD_REWARDS, GEM_PRODUCTS, PETS, SHOP } from '@shared/balance'
+import { AD_REWARDS, BIG_TANK_SECONDS, GEM_PRODUCTS, SHOP } from '@shared/balance'
 import { formatNumber } from '@shared/format'
 
 import { buyGems, isRewardedAvailable, useGemsBalance, watchRewardedAd } from '../../bloxity/services'
 import { buy } from '../../net/shop'
 import { useGame } from '../../store/game'
 import Icon from '../Icon'
-import PetIcon from '../PetIcon'
 import RewardIcon from '../RewardIcon'
 import StrokeText from '../StrokeText'
 import { ChunkyButton, Price } from '../hud/parts'
 import { GRADIENTS, u } from '../hud/style'
 import Panel from './Panel'
 
-const SECTIONS = [
-  { title: 'Passes', items: ['healthX2', 'winsX2', 'autoRoll'] },
-  { title: 'Training Pads', items: ['padVeryOp', 'padBest'] },
-  { title: 'Specials', items: ['sphinx'] },
-]
+const SECTIONS = [{ title: 'Passes', items: ['magnet', 'bigTank', 'winsX2'] }]
 
 const ICONS = {
-  healthX2: 'heart',
-  winsX2: 'trophy',
-  autoRoll: 'tire',
-  padVeryOp: 'portal',
-  padBest: 'portal',
+  magnet: 'magnet',
+  bigTank: 'boost',
+  winsX2: 'coin',
 }
 
 const BLURBS = {
-  healthX2: 'Double every Power gain, forever',
-  winsX2: 'Double the Wins from every launch, forever',
-  autoRoll: 'Stretches and launches you from the Launch Pad',
-  padVeryOp: 'Unlocks the x40 Diamond Pad',
-  padBest: 'Unlocks the x100 Galaxy Pad',
-  sphinx: `Limited: x${formatNumber(PETS.sphinx.mult)} Power pet`,
+  magnet: 'Grab coins from much further away, forever',
+  bigTank: `+${BIG_TANK_SECONDS}s of Boost on every ride, forever`,
+  winsX2: 'Double the Coins from every ride, forever',
 }
 
 const BLURB_STYLE = { color: '#3a2a10', fontFamily: 'system-ui, sans-serif', fontWeight: 700 }
@@ -158,12 +148,12 @@ function FreeSection() {
   )
 }
 
-/** Everything Wins can buy besides balls, eggs and Health packs, grouped, plus Gems and free rewards. */
+/** Free potions for ads, the Coin passes, and Boxity Gems extras. */
 export function StorePanel() {
   const passes = useGame((s) => s.profile.passes)
   const wins = useGame((s) => s.profile.wins)
   return (
-    <Panel title="STORE" width={1080}>
+    <Panel title="STORE" icon="store" width={1080}>
       <div className="flex flex-col" style={{ gap: u(18) }}>
         <FreeSection />
         {SECTIONS.map((section) => (
@@ -173,7 +163,7 @@ export function StorePanel() {
               {section.items.map((id) => {
                 const product = SHOP[id]
                 const owned = product.kind === 'pass' && passes[id]
-                const icon = id === 'sphinx' ? <PetIcon id="sphinx" size={u(96)} /> : <Icon name={ICONS[id]} size={u(96)} />
+                const icon = <Icon name={ICONS[id]} size={u(96)} />
                 return (
                   <Card key={id} icon={icon} name={product.name} blurb={BLURBS[id]} faded={owned}>
                     <ChunkyButton

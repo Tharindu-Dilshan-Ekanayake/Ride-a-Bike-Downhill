@@ -1,4 +1,3 @@
-import { RUN_CADENCE } from '../game/kick'
 
 import { useQuality } from '../store/quality'
 import { createCrowd } from './crowd'
@@ -262,97 +261,6 @@ function windStop() {
   hum.stop(t + 1)
   music?.duck(false)
   liveCrowd()?.anticipate(false)
-}
-
-// --- The pull-up bar: a springy boing every rep ----------------------------------------
-
-/** Seconds between reps on a bar: one a TRAIN_INTERVAL (kick.RUN_CADENCE is its phase speed). */
-const REP = (Math.PI * 2) / RUN_CADENCE
-let bar = null
-
-/**
- * Starts the reps' sound under you: each pull-up a rubbery "boi-oing" as your arms snap
- * short and a soft creak as they stretch back out (scheduled a little ahead on the audio
- * clock, like the music). Stopped by treadmillStop (the template's name) when you let go.
- */
-function treadmillStart() {
-  if (!ctx || bar || silent() || ctx.state !== 'running') return
-  let next = ctx.currentTime + REP * 0.25
-  const schedule = () => {
-    next = Math.max(next, ctx.currentTime + 0.02)
-    while (next < ctx.currentTime + 0.4) {
-      const at = next - ctx.currentTime
-      tone(150, { type: 'triangle', at, duration: 0.2, volume: 0.06, slideTo: 380 })
-      tone(760, { type: 'sine', at: at + 0.02, duration: 0.07, volume: 0.02, slideTo: 1100 })
-      tone(120, { type: 'sawtooth', at: at + REP * 0.5, duration: 0.18, volume: 0.012, slideTo: 85 })
-      next += REP
-    }
-  }
-  bar = { timer: setInterval(schedule, 100) }
-  schedule()
-}
-
-/** Letting go of the bar: the reps stop. */
-function treadmillStop() {
-  if (!bar) return
-  clearInterval(bar.timer)
-  bar = null
-}
-
-// --- The stretch: rubber creaking as you pull back on the launch posts ---------------
-
-let stretch = null
-let stretchSetAt = 0
-
-/**
- * Holding LAUNCH: a taut rubber creak that climbs in pitch the further back you pull and,
- * once it's full, trembles with every twang. Moved by stretchSet, stopped by stretchStop.
- */
-function stretchStart() {
-  if (!ctx || stretch || silent() || ctx.state !== 'running') return
-  const t = ctx.currentTime
-  const osc = ctx.createOscillator()
-  osc.type = 'sawtooth'
-  osc.frequency.value = 70
-  const filter = ctx.createBiquadFilter()
-  filter.type = 'bandpass'
-  filter.frequency.value = 520
-  filter.Q.value = 3
-  const gain = ctx.createGain()
-  gain.gain.setValueAtTime(0.0001, t)
-  gain.gain.setTargetAtTime(0.03, t, 0.05)
-  // The creak: the rubber's loudness fluttering fast.
-  const lfo = ctx.createOscillator()
-  lfo.frequency.value = 14
-  const depth = ctx.createGain()
-  depth.gain.value = 0.018
-  lfo.connect(depth).connect(gain.gain)
-  osc.connect(filter).connect(gain).connect(master)
-  osc.start(t)
-  lfo.start(t)
-  stretch = { osc, filter, gain, lfo }
-}
-
-/** `charge` 0-1, the stretch meter; `full` once it twangs. Called every frame. */
-function stretchSet(charge, full = false) {
-  if (!stretch) return
-  const now = performance.now()
-  if (now - stretchSetAt < 40) return
-  stretchSetAt = now
-  const t = ctx.currentTime
-  stretch.osc.frequency.setTargetAtTime(70 + charge * 200, t, 0.03)
-  stretch.filter.frequency.setTargetAtTime(480 + charge * 1500, t, 0.04)
-  stretch.lfo.frequency.setTargetAtTime(full ? 32 : 12 + charge * 10, t, 0.05)
-}
-
-function stretchStop() {
-  if (!stretch) return
-  const { osc, gain, lfo } = stretch
-  stretch = null
-  const t = ctx.currentTime
-  gain.gain.setTargetAtTime(0.0001, t, 0.03)
-  osc.stop(t + 0.3)
-  lfo.stop(t + 0.3)
 }
 
 function ready(name, minGapMs = 0) {
@@ -680,13 +588,18 @@ export const sfx = {
     noise({ duration: 0.5, volume: 0.07, from: 200, to: 1800, q: 0.6 })
     ;[262, 330, 392, 523, 659, 784].forEach((f, i) => tone(f, { type: 'sawtooth', at: 0.1 + i * 0.07, duration: 0.25, volume: 0.06 }))
   },
-  /** Grabbing an unlocked pull-up bar: a soft rising chime, and the reps start. */
-  treadmillEnter() {
-    if (!ready('treadmillEnter', 400)) return
-    ;[523, 784, 1047].forEach((f, i) => tone(f, { type: 'sine', at: i * 0.05, duration: 0.28, volume: 0.07 }))
-    treadmillStart()
+  /** The countdown at the gate: three beeps and a higher GO. */
+  countdown() {
+    if (!ready('countdown', 1000)) return
+    ;[0, 0.6, 1.2].forEach((at) => tone(660, { type: 'square', at: at + 0.25, duration: 0.12, volume: 0.07 }))
+    tone(1320, { type: 'square', at: 2.05, duration: 0.3, volume: 0.09 })
   },
-  treadmillStop,
+  /** Boost lit (or a boost pad): a rocket whoosh rising. */
+  boost() {
+    if (!ready('boost', 250)) return
+    noise({ duration: 0.45, volume: 0.1, from: 300, to: 2600, q: 0.7 })
+    tone(180, { type: 'sawtooth', duration: 0.35, volume: 0.05, slideTo: 520 })
+  },
   /** A jump: a springy little boing. */
   jump() {
     if (ready('jump', 120)) tone(260, { type: 'triangle', duration: 0.18, volume: 0.1, slideTo: 620 })
@@ -708,9 +621,6 @@ export const sfx = {
   windStart,
   windSet,
   windStop,
-  stretchStart,
-  stretchSet,
-  stretchStop,
 }
 
 // The template's names, kept as aliases while callers move over to the tire ones.

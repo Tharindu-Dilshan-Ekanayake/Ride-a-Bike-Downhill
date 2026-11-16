@@ -33,7 +33,7 @@ export function isRewardedAvailable() {
 }
 
 /**
- * Shows a rewarded ad for `placement` ('health-potion', 'wins-potion', ...) and, if it
+ * Shows a rewarded ad for `placement` ('wins-potion', 'turbo-potion', ...) and, if it
  * was watched to the end, claims the reward.
  *
  * @returns {Promise<{ ok: boolean, status: string, reason?: string }>} `ok` once the

@@ -1,6 +1,6 @@
 import { PLAYTIME_REWARDS } from '@shared/balance'
-import { formatClock } from '@shared/format'
-import { playtimeStatus } from '@shared/logic'
+import { formatClock, formatNumber } from '@shared/format'
+import { playtimeStatus, winsForRides } from '@shared/logic'
 
 import { sfx } from '../../audio/sfx'
 import { actions } from '../../net/actions'
@@ -32,7 +32,8 @@ export function GiftTile() {
       return
     }
     sfx.click()
-    getGame().showToast(`FREE GIFT: ${reward.label} in ${formatClock(next.unlocksIn)}`)
+    const what = reward.grant.winsRides ? `+${formatNumber(winsForRides(getGame().profile, reward.grant.winsRides))} Coins` : reward.label
+    getGame().showToast(`FREE GIFT: ${what} in ${formatClock(next.unlocksIn)}`)
   }
 
   return (

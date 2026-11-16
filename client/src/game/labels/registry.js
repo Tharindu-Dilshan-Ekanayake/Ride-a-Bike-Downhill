@@ -1,4 +1,4 @@
-/** The live label batch, for systems that relabel things (pads, stock counters). */
+/** The live label batch, for systems that relabel things (the bike stands as you buy). */
 let activeBatch = null
 /** Updates requested before the batch finished building, applied once it has. */
 const pending = new Map()
