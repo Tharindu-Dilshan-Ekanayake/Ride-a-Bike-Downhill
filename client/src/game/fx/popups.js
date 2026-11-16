@@ -1,6 +1,6 @@
 import { Vector3 } from 'three'
 
-import { setText } from '../roll/hudLink'
+import { setText } from './domText'
 
 /**
  * Floating "+12 POWER" text: a fixed pool of DOM elements (max 10 alive), positioned

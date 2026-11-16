@@ -21,8 +21,8 @@ import { getBloxityState, useBloxityStore } from './store'
 /** Boards the game declares; scores come from the game server (or, offline, below). */
 export const LEADERBOARDS = [
   { id: 'rebirths', label: 'Rebirths', order: 'desc', mode: 'best', format: 'number', reset: 'none' },
-  { id: 'wins', label: 'Total Wins', order: 'desc', mode: 'best', format: 'compact', reset: 'none' },
-  { id: 'distance', label: 'Longest Flight (m)', order: 'desc', mode: 'best', format: 'compact', reset: 'none' },
+  { id: 'wins', label: 'Total Coins', order: 'desc', mode: 'best', format: 'compact', reset: 'none' },
+  { id: 'distance', label: 'Longest Ride (m)', order: 'desc', mode: 'best', format: 'compact', reset: 'none' },
   { id: 'playtime', label: 'Minutes Played', order: 'desc', mode: 'best', format: 'number', reset: 'none' },
 ]
 
@@ -135,7 +135,7 @@ function installSettings(sdk) {
 function onPlayerEvent(event, data) {
   switch (event) {
     case 'respawn_request':
-      // Not while your tire is rolling: you're frozen at the Roll Zone until it stops.
+      // Not during a ride: you're on the bike until it's over.
       if (runtime.player.frozen) return
       stopLocalEmote()
       respawn()
@@ -225,7 +225,7 @@ function boardScores(profile) {
 /**
  * Online, the game server submits leaderboard scores. Offline (no server, see
  * net/localServer.js) nobody would, so the browser does: after profile changes (each
- * roll, rebirth...), throttled, and only scores higher than the last sent ("best" mode
+ * ride, rebirth...), throttled, and only scores higher than the last sent ("best" mode
  * boards keep the best anyway). Signed-in players only: a guest has no board entry.
  */
 function installOfflineLeaderboards(sdk) {

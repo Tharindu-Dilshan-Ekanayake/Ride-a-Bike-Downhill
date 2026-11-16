@@ -1,13 +1,11 @@
 import Icon from './Icon'
-import PetIcon from './PetIcon'
 
 /**
- * Icon for a reward table entry: `pet:<id>` draws the pet's portrait, anything else is
- * a regular icon name (including `egg:<id>`).
+ * Icon for a reward table entry or a reward grant: an icon name ('coin', 'potionWins',
+ * 'potionBoost', 'bike:<color>'...). Item ids double as their icon names.
  */
 export function RewardIcon({ icon, size }) {
-  if (icon.startsWith('pet:')) return <PetIcon id={icon.slice(4)} size={size} />
-  return <Icon name={icon} size={size} />
+  return <Icon name={icon || 'coin'} size={size} />
 }
 
 export default RewardIcon

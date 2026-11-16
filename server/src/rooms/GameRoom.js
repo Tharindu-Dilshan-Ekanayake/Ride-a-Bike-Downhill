@@ -1,15 +1,15 @@
 import { Room } from '@colyseus/core'
 
 import { AD_REWARDS } from '../../../shared/balance.js'
-import { applyOfflineProgress } from '../../../shared/logic.js'
 import { PlayerSession } from '../../../shared/session.js'
-import { clampToWalkable, isRollReturn, MAX_MOVE_SPEED, SPAWN } from '../../../shared/world.js'
+import { getTrack, WALL_X } from '../../../shared/track.js'
+import { clampToWalkable, isRideReturn, MAX_MOVE_SPEED, SPAWN } from '../../../shared/world.js'
 import { resolveIdentity, verifyAdReward } from '../bloxityApi.js'
 import { reportLeaver } from '../bloxityLeaderboards.js'
-import { carryOverGuest, getSphinxStock, loadProfile, saveProfile, takeSphinx } from '../db.js'
+import { carryOverGuest, loadProfile, saveProfile } from '../db.js'
 import { applyGemsForSession } from '../gems.js'
 import { getLeaderboards } from '../leaderboards.js'
-import { activePlayers, broadcastAll, liveRooms } from '../registry.js'
+import { activePlayers, liveRooms } from '../registry.js'
 import { GameState, PlayerState } from './schema.js'
 
 const MAX_CLIENTS = 8
@@ -25,8 +25,10 @@ const DUPLICATE_LOGIN = 4100
 /** Names this server process in save ownership; Legion sets POD_NAME per pod. */
 const POD = process.env.POD_NAME || `local-${process.pid}`
 
-/** What other players may be told someone is doing. */
-const ANIMS = ['idle', 'walk', 'run', 'jump', 'pull']
+/** What other players may be told someone is doing (in the lobby). */
+const ANIMS = ['idle', 'walk', 'run', 'jump']
+/** What a rider on the road may be doing: riding, flying through the air, or bailed off. */
+const RIDE_STATES = ['ride', 'air', 'bail']
 /** A Boxity emote, replicated through `anim` as 'emote:<its 24-hex id>'. */
 const EMOTE_ANIM = /^emote:[a-f0-9]{24}$/
 /** Least time between two 'gemsCheck's from one player (each is a database query). */
@@ -77,6 +79,7 @@ export class GameRoom extends Room {
     // Everything the client can ask for goes through the player's session.
     this.onMessage('*', (client, type, payload) => {
       if (type === 'pos') return this.handlePosition(client, payload)
+      if (type === 'ridePos') return this.handleRidePosition(client, payload)
       if (type === 'look') return this.handleLook(client, payload)
       // Boxity rewards: checked with Boxity by the server, never granted on the client's word.
       if (type === 'adReward') return this.handleAdReward(client, payload)
@@ -119,7 +122,6 @@ export class GameRoom extends Room {
       if (from) console.log(`[room] carried guest ${from} into ${playerId}`)
     }
     const profile = await loadProfile(playerId, name, owner)
-    const offline = applyOfflineProgress(profile, now)
 
     const player = new PlayerState()
     const spawnX = SPAWN.x + (Math.random() - 0.5) * 6
@@ -138,33 +140,10 @@ export class GameRoom extends Room {
         for (const [sid, p] of this.state.players) if (sid !== client.sessionId && (p.world || 0) === (profile.world || 0)) others += 1
         return others
       },
-      onPurchase: (productId) => {
-        if (productId !== 'sphinx') return true
-        const ok = takeSphinx()
-        if (ok) broadcastAll('stock', { sphinx: getSphinxStock() })
-        return ok
-      },
-      onRoll: (result) => {
-        // Everyone else watches it as a ghost tire. Excluded by session id, not by the
-        // client object from the join: after a reconnect that object is stale, and the
-        // roller would get their own roll back as a second tire.
-        const self = this.clients.find((c) => c.sessionId === client.sessionId)
-        this.broadcast(
-          'ghostRoll',
-          {
-            sid: client.sessionId,
-            distance: result.distance,
-            duration: result.duration,
-            blocked: result.blocked,
-            tireId: profile.equippedTire,
-            // How well it was timed: others see the jump smash and the flight it made.
-            hit: result.hit,
-            world: profile.world,
-            x: player.x,
-            z: player.z,
-          },
-          self ? { except: self } : undefined,
-        )
+      // Off the road and back in the lobby, as far as everyone else can see.
+      onRide: () => {
+        player.riding = false
+        player.rstate = ''
       },
     })
 
@@ -173,9 +152,7 @@ export class GameRoom extends Room {
 
     session.sendProfile()
     client.send('spawn', { x: spawnX, z: spawnZ })
-    client.send('stock', { sphinx: getSphinxStock() })
     client.send('leaderboards', getLeaderboards())
-    if (offline) client.send('offline', offline)
     this.syncPlayer(client.sessionId)
     this.updateListing()
     // Gems bought while away (or on another pod) land now.
@@ -186,8 +163,6 @@ export class GameRoom extends Room {
   async onDrop(client) {
     const member = this.members.get(client.sessionId)
     if (!member || member.kicked) return
-    // Stop training while away; the seat stays warm for the reconnect.
-    member.session.handle('leavePad', {}, Date.now())
     member.reconnection = this.allowReconnection(client, RECONNECT_SECONDS)
     try {
       await member.reconnection
@@ -278,18 +253,13 @@ export class GameRoom extends Room {
     const player = this.state.players.get(sessionId)
     if (!member || !player) return
     const p = member.session.profile
-    if (player.health !== p.health) player.health = p.health
     if (player.wins !== p.wins) player.wins = p.wins
     if (player.rebirths !== p.rebirths) player.rebirths = p.rebirths
-    if (player.level !== p.level) player.level = p.level
-    if (player.tireId !== p.equippedTire) player.tireId = p.equippedTire
+    if (player.bikeId !== p.bike) player.bikeId = p.bike
     if (player.world !== p.world) player.world = p.world
-    const pets = p.equippedPets
-      .map((uid) => p.pets.find((pet) => pet.uid === uid)?.id)
-      .filter(Boolean)
-    if (pets.join() !== [...player.petIds].join()) {
-      player.petIds.clear()
-      for (const id of pets) player.petIds.push(id)
+    if (player.riding && !member.session.riding) {
+      player.riding = false
+      player.rstate = ''
     }
   }
 
@@ -310,7 +280,7 @@ export class GameRoom extends Room {
     const now = Date.now()
     const dt = Math.max(0.05, (now - member.lastPosAt) / 1000)
     const dist = Math.hypot(x - member.lastPos.x, z - member.lastPos.z)
-    if (dist > MAX_MOVE_SPEED * dt + MOVE_SLACK && !isRollReturn(member.lastPos, { x, z })) {
+    if (dist > MAX_MOVE_SPEED * dt + MOVE_SLACK && !isRideReturn({ x, z })) {
       client.send('correct', { x: member.lastPos.x, y: player.y, z: member.lastPos.z })
       return
     }
@@ -322,6 +292,30 @@ export class GameRoom extends Room {
     player.z = clamped.z
     player.rotY = Number(msg.r) || 0
     player.anim = ANIMS.includes(msg.a) || (typeof msg.a === 'string' && EMOTE_ANIM.test(msg.a)) ? msg.a : 'idle'
+  }
+
+  /**
+   * Where a rider is on the road, ~10 Hz while their ride lasts: metre along it, metres
+   * across, height above the road and facing, plus what they're doing. Only accepted
+   * while the session has a ride under way, and kept to the road; purely so everyone
+   * else can watch (the ride's result is checked on its own, in applyRide).
+   */
+  handleRidePosition(client, msg) {
+    const member = this.members.get(client.sessionId)
+    const player = this.state.players.get(client.sessionId)
+    if (!member || !player || !msg || !member.session.riding) return
+    const m = Number(msg.m)
+    const x = Number(msg.x)
+    const h = Number(msg.h)
+    const yaw = Number(msg.r)
+    if (![m, x, h, yaw].every(Number.isFinite)) return
+    const track = getTrack(member.session.ride.world)
+    player.rm = Math.max(0, Math.min(track.length + 40, m))
+    player.rx = Math.max(-WALL_X - 2, Math.min(WALL_X + 2, x))
+    player.rh = Math.max(-2, Math.min(80, h))
+    player.ryaw = yaw
+    player.rstate = RIDE_STATES.includes(msg.s) ? msg.s : 'ride'
+    if (!player.riding) player.riding = true
   }
 
   /**

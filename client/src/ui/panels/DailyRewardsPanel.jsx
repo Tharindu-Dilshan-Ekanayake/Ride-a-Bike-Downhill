@@ -1,6 +1,6 @@
 import { DAILY_REWARDS } from '@shared/balance'
-import { formatClock } from '@shared/format'
-import { dailyStatus } from '@shared/logic'
+import { formatClock, formatNumber } from '@shared/format'
+import { dailyStatus, winsForRides } from '@shared/logic'
 
 import { actions } from '../../net/actions'
 import { useGame } from '../../store/game'
@@ -38,8 +38,12 @@ function StatusButton({ status, onClaim, big }) {
   )
 }
 
-function DayCard({ day, status, big = false }) {
+/** What a day's reward says under its picture: the Coins it's worth now, or its own tag. */
+const rewardSub = (reward, profile) => (reward.grant.winsRides ? `+${formatNumber(winsForRides(profile, reward.grant.winsRides))}` : reward.sub)
+
+function DayCard({ day, status, profile, big = false }) {
   const reward = DAILY_REWARDS[day]
+  const sub = rewardSub(reward, profile)
   return (
     <div
       className="relative flex flex-col items-center"
@@ -71,17 +75,24 @@ function DayCard({ day, status, big = false }) {
       )}
       <div className="relative flex flex-1 items-center justify-center" style={{ minHeight: u(big ? 300 : 126) }}>
         <RewardIcon icon={reward.icon} size={u(big ? 270 : 120)} />
-        {!big && reward.sub && (
-          <span className="absolute" style={{ right: u(-6), bottom: u(-2), fontSize: u(46) }}>
+        {!big && sub && (
+          <span className="absolute" style={{ right: u(-6), bottom: u(-2), fontSize: u(sub.length > 5 ? 34 : 46) }}>
             <StrokeText stroke={u(9)} gradient={GRADIENTS.gold}>
-              {reward.sub}
+              {sub}
             </StrokeText>
           </span>
         )}
       </div>
       {big && (
-        <div style={{ fontSize: u(70), marginBottom: u(28) }}>
+        <div className="flex flex-col items-center" style={{ fontSize: u(70), marginBottom: u(28) }}>
           <StrokeText stroke={u(13)}>{reward.label}</StrokeText>
+          {sub && (
+            <span style={{ fontSize: u(56) }}>
+              <StrokeText stroke={u(11)} gradient={GRADIENTS.gold}>
+                {sub}
+              </StrokeText>
+            </span>
+          )}
         </div>
       )}
       <StatusButton status={status} big={big} onClaim={() => actions.claimDaily(day)} />
@@ -96,14 +107,14 @@ export function DailyRewardsPanel() {
   const status = dailyStatus(profile, now)
 
   return (
-    <Panel title="DAILY REWARDS" width={1040}>
+    <Panel title="DAILY REWARDS" icon="calendar" width={1040}>
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr 1.55fr', gap: u(14) }}>
         <div className="col-span-3 grid grid-cols-3" style={{ gap: u(14) }}>
           {[0, 1, 2, 3, 4, 5].map((day) => (
-            <DayCard key={day} day={day} status={status[day]} />
+            <DayCard key={day} day={day} status={status[day]} profile={profile} />
           ))}
         </div>
-        <DayCard day={6} status={status[6]} big />
+        <DayCard day={6} status={status[6]} profile={profile} big />
       </div>
     </Panel>
   )

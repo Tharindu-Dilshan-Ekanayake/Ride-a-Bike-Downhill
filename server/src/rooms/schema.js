@@ -14,19 +14,26 @@ export const PlayerState = schema(
     y: t.float32(),
     z: t.float32(),
     rotY: t.float32(),
-    /** 'idle' | 'walk' | 'run' (pull-ups on a bar) | 'jump' | 'pull' (stretching back on the launch posts) | 'emote:<Boxity emote id>' */
+    /** 'idle' | 'walk' | 'run' | 'jump' | 'emote:<Boxity emote id>' (in the lobby) */
     anim: t.string(),
     /** What their Bloxity avatar wears, as JSON `{ equipped, proportions }` ('' = base). */
     look: t.string(),
-    tireId: t.string(),
-    /** Equipped pet species, at most 3. */
-    petIds: t.array('string'),
-    health: t.float64(),
+    /** The bike they ride (balance BIKES id). */
+    bikeId: t.string(),
     wins: t.float64(),
     rebirths: t.uint16(),
     /** The world they're in (balance WORLDS): players only see others in theirs. */
     world: t.uint8(),
-    level: t.uint16(),
+    /**
+     * Out on the road: where (track.js road point - metre along, metres across, height
+     * above the road), which way they face, and 'ride' | 'air' | 'bail'.
+     */
+    riding: t.boolean(),
+    rm: t.float32(),
+    rx: t.float32(),
+    rh: t.float32(),
+    ryaw: t.float32(),
+    rstate: t.string(),
   },
   'PlayerState',
 )

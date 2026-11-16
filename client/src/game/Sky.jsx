@@ -18,9 +18,9 @@ const skyVertexShader = /* glsl */ `
 `
 
 /**
- * Game-day sky, all in one shader: the zenith-to-horizon gradient, a big soft glow round
- * the low sun (and a bright core in its middle), a scatter of thin streaky high clouds lit
- * warm on the sun's side, and - for the night stages - stars. No textures, no geometry
+ * Alpine sky, all in one shader: the zenith-to-horizon gradient, a big soft glow round
+ * the sun (and a bright core in its middle), a scatter of thin streaky high clouds lit
+ * warm on the sun's side, and - if a look asks for them - stars. No textures, no geometry
  * beyond the dome, nothing done per frame on the CPU.
  */
 const skyFragmentShader = /* glsl */ `
@@ -51,7 +51,7 @@ const skyFragmentShader = /* glsl */ `
     // Below the horizon stays horizon-coloured, matching the fog on distant ground.
     vec3 color = mix(horizonColor, topColor, pow(max(h, 0.0), exponent));
 
-    // The low sun: a wide warm haze, a tighter glow and a bright core.
+    // The sun: a wide warm haze, a tighter glow and a bright core.
     float s = max(dot(dir, normalize(sunDirection)), 0.0);
     color += sunColor * glow * (0.35 * pow(s, 6.0) + 0.45 * pow(s, 40.0) + 1.2 * pow(s, 900.0));
 
@@ -65,7 +65,7 @@ const skyFragmentShader = /* glsl */ `
       color = mix(color, lit, streak * 0.7 * clouds);
     }
 
-    // Stars on the night stages: a fixed scatter, brightest overhead.
+    // Stars, when a look has them: a fixed scatter, brightest overhead.
     if (stars > 0.0 && h > 0.0) {
       vec3 cell = floor(dir * 260.0);
       float star = step(0.9965, skyHash(cell.xz + cell.y * 17.0));
@@ -78,9 +78,9 @@ const skyFragmentShader = /* glsl */ `
 `
 
 /**
- * The sky dome. Follows the camera so the horizon always sits at eye level and the dome
- * can never be walked out of. Its colours are skyUniforms (worldLook.js sets the lobby's,
- * the kick field each stage's).
+ * The sky dome. Follows the camera wherever it goes - the lobby, or kilometres down the
+ * mountain road on a ride - so the horizon always sits at eye level and the dome can never
+ * be left. Its colours are skyUniforms (worldLook.js sets each world's).
  */
 export function Sky() {
   const ref = useRef(null)

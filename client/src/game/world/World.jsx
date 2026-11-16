@@ -9,24 +9,23 @@ import { glowTime } from '../glow'
 import { createToyMaterial, sharedMaterials, toyTime } from '../materials'
 import { venueOf } from '../sceneStyle'
 import { createGroundGeometry, createGroundMap } from './ground'
-import { buildEggStands } from './eggs'
+import { buildMountain } from './mountain'
 import { buildPortalFrame } from './portalFrame'
+import { buildGarage } from './garage'
+import { buildGiftStand, buildShop } from './shop'
 import { createPaintedSigns } from './signs'
-import { buildRollZone } from './rollZone'
-import { buildPads, buildShop } from './structures'
-import { buildHills } from './hills'
-import { addScoreboard } from './terrain'
+import { buildStartGate } from './startGate'
 
 /**
- * The static lobby: ground plane, every box (hills, trees, pull-up bars, stages) in
- * one InstancedMesh, and every non-box prop (mats, rings...) merged into one mesh, plus
- * the painted signs (one atlas, one mesh). Four draw calls for the whole environment - five
- * at Palm Beach, whose ocean is a plane of its own.
+ * The static lobby on the mountain top: ground plane, every box (the mountain, its pines,
+ * the START gate, the bike shop's sign, the gift stand, the portal's ring) in one
+ * InstancedMesh, every non-box prop merged into one mesh, plus the painted signs (one
+ * atlas, one mesh). Four draw calls for the whole environment.
  *
- * Built for the world you're in (its venue: sceneStyle VENUES) and rebuilt, the old one
- * disposed, when you step through the portal (the screen is faded out for it). Quality only
- * decides crowd and decor density at build time and whether the result casts/receives
- * realtime shadows.
+ * Built for the world you're in (its venue: sceneStyle VENUES - Pine Peak or Frost
+ * Ridge) and rebuilt, the old one disposed, when you step through the portal (the screen
+ * is faded out for it). Quality only decides tree and detail density at build time and
+ * whether the result casts/receives realtime shadows.
  */
 export function World() {
   const shadows = useQuality((s) => s.settings.shadows === 'realtime')
@@ -37,7 +36,7 @@ export function World() {
   const scene = useThree((s) => s.scene)
   const [signs, setSigns] = useState([])
 
-  // Drives every animated toy-material style (water...) and the sea.
+  // Drives every animated toy-material style and the halos' pulse.
   useFrame((state) => {
     toyTime.value = state.clock.elapsedTime
     glowTime.value = state.clock.elapsedTime
@@ -83,16 +82,16 @@ export function World() {
   const { blocks, ground, props } = useMemo(() => {
     performance.mark('pp:world-start')
     const { decorDensity, maxTexture } = useQuality.getState().settings
+    const venue = venueOf(world)
+    const detail = decorDensity >= 0.75
     const set = new BlockSet()
-    // Candy mesas all round the canyon (sandstone at Palm Beach), the scoreboard on the south one.
-    buildHills(set, { density: decorDensity, venue: venueOf(world) })
-    addScoreboard(set, venueOf(world))
+    buildMountain(set, { density: decorDensity, venue })
     const propBuilder = new PropBuilder()
-    buildPads(set, propBuilder)
-    buildShop(set, { detail: decorDensity >= 0.75, world })
-    buildRollZone(set, propBuilder, { detail: decorDensity >= 0.75, world })
+    buildStartGate(set, propBuilder, { detail, venue })
+    buildShop(set, { detail, venue })
+    buildGiftStand(set)
     buildPortalFrame(set)
-    buildEggStands(set)
+    buildGarage(set, propBuilder, { venue, detail })
 
     const map = createGroundMap(maxTexture, world)
     const groundMaterial = createToyMaterial({ instanced: false, vertexColors: false, map, studScale: 2 })
@@ -101,7 +100,7 @@ export function World() {
     return {
       blocks: set.build(sharedMaterials().blocks),
       props: asToyInstance(propBuilder.build(), sharedMaterials().toy),
-      ground: { geometry: createGroundGeometry(world), material: groundMaterial, map },
+      ground: { geometry: createGroundGeometry(), material: groundMaterial, map },
     }
   }, [world])
 

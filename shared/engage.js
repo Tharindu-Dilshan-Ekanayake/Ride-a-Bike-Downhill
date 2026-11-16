@@ -1,5 +1,5 @@
 import { dayNumber, LUCKY_CHANCE, LUCKY_GIFTS, QUEST_BONUS, QUEST_TIERS, QUEST_TYPES, QUESTS_PER_DAY, streakMultiplier } from './balance.js'
-import { niceRound, payReward, winsForRolls } from './logic.js'
+import { niceRound, payReward, winsForRides } from './logic.js'
 import { mulberry32 } from './rng.js'
 
 /**
@@ -18,12 +18,12 @@ function hashString(text) {
   return h >>> 0
 }
 
-/** A quest's target for `tier`, scaled by your best flight where its kind asks. */
+/** A quest's target for `tier`, scaled by your best ride where its kind asks. */
 function questTarget(type, tier, profile) {
   const raw = type.targets[tier]
-  const best = Math.max(120, profile.stats.bestDistance || 0)
+  const best = Math.max(300, profile.stats.best?.[profile.world || 0] || 0)
   if (type.scale === 'total') return niceRound(raw * best)
-  if (type.scale === 'best') return niceRound(Math.max(80, raw * best))
+  if (type.scale === 'best') return niceRound(Math.max(200, raw * best))
   return raw
 }
 
@@ -48,7 +48,7 @@ export function ensureQuests(profile, now) {
   return true
 }
 
-/** A quest's line for the UI: "Launch 12 times". */
+/** A quest's line for the UI: "Ride down 8 times". */
 export const questText = (quest) => QUEST_TYPES[quest.type]?.text.replace('{n}', quest.target.toLocaleString('en-US')) ?? ''
 
 export const questDone = (quest) => quest.progress >= quest.target
@@ -58,11 +58,11 @@ export function questReward(profile, index) {
   const quest = profile.quests.list[index]
   if (!quest) return null
   const tier = QUEST_TIERS[quest.tier]
-  return { wins: winsForRolls(profile, tier.winsRolls), item: tier.item ?? null }
+  return { wins: winsForRides(profile, tier.winsRides), item: tier.item ?? null }
 }
 
-/** What the bonus chest would give you now: { wins, egg }. */
-export const questBonusReward = (profile) => ({ wins: winsForRolls(profile, QUEST_BONUS.winsRolls), egg: true })
+/** What the bonus chest would give you now: { wins, item }. */
+export const questBonusReward = (profile) => ({ wins: winsForRides(profile, QUEST_BONUS.winsRides), item: QUEST_BONUS.item ?? null })
 
 /**
  * Counts `amount` of `counter` towards today's quests (adding up, or the best single value
@@ -89,7 +89,7 @@ export function questsReady(profile, now) {
   return !q.bonus && q.list.length > 0 && q.list.every((quest) => quest.claimed)
 }
 
-/** Claims finished quest `index`: its Wins (and a potion for a HARD one). */
+/** Claims finished quest `index`: its Coins (and a potion for a HARD one). */
 export function claimQuest(profile, index, now) {
   ensureQuests(profile, now)
   const quest = profile.quests.list[index]
@@ -98,18 +98,18 @@ export function claimQuest(profile, index, now) {
   if (!questDone(quest)) return { ok: false, error: 'Not finished yet' }
   quest.claimed = true
   const tier = QUEST_TIERS[quest.tier]
-  const paid = payReward(profile, { winsRolls: tier.winsRolls, item: tier.item })
+  const paid = payReward(profile, { winsRides: tier.winsRides, item: tier.item })
   return { ok: true, index, ...paid, label: `QUEST DONE: ${questText(quest)}` }
 }
 
-/** Opens the bonus chest once all three are claimed: Wins and an egg that fits you. */
+/** Opens the bonus chest once all three are claimed: Coins and a potion. */
 export function claimQuestBonus(profile, now) {
   ensureQuests(profile, now)
   const q = profile.quests
   if (q.bonus) return { ok: false, error: 'Already opened' }
   if (!q.list.every((quest) => quest.claimed)) return { ok: false, error: 'Finish all three first' }
   q.bonus = true
-  const paid = payReward(profile, { winsRolls: QUEST_BONUS.winsRolls, egg: true })
+  const paid = payReward(profile, { winsRides: QUEST_BONUS.winsRides, item: QUEST_BONUS.item })
   return { ok: true, ...paid, label: 'QUEST CHEST OPENED' }
 }
 
@@ -131,7 +131,7 @@ export function applyStreak(profile, now) {
 }
 
 /**
- * A launch's lucky gift, LUCKY_CHANCE of the time: picks one (by weight), pays it and
+ * A ride's lucky gift, LUCKY_CHANCE of the time: picks one (by weight), pays it and
  * returns { label, icon, wins, items }; null if no luck this time.
  */
 export function rollLuckyGift(profile, rand = Math.random) {

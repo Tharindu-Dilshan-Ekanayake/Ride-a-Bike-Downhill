@@ -3,9 +3,7 @@ import { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 
 import { getBloxityState } from '../bloxity/store'
-import { launch } from './launch'
 import { placeLocalBubble } from './remote/nameplates'
-import { PULL_DIST } from './roll/path'
 import { runtime } from './runtime'
 
 /** How high above the player's feet the camera aims. */
@@ -29,8 +27,6 @@ const LOOK_SMOOTHING = 14
 
 const _desired = new Vector3()
 const _target = new Vector3()
-/** How far the view has swung round for the stretch (0-1), eased. */
-let stretchView = 0
 
 /**
  * Third-person orbit camera around the player.
@@ -38,7 +34,7 @@ let stretchView = 0
  * Mouse: drag (either button) orbits, wheel zooms. Touch: one-finger drag orbits (the
  * joystick owns the left side of the screen as a separate element), pinch zooms.
  *
- * Orbit state lives in `runtime.camera`, so the roll can hand the camera
+ * Orbit state lives in `runtime.camera`, so the ride can hand the camera
  * back exactly where it took it from. Drag speed is scaled by the player's Boxity
  * camera_sensitivity setting. Also places your own chat bubble each frame, once the
  * camera has moved (it needs the final camera to project).
@@ -133,17 +129,12 @@ export function FollowCamera() {
     }
     const delta = Math.min(rawDelta, 0.05)
     const p = runtime.player.position
-    // Holding the launch posts: swing round to three-quarters on, back and a little lower,
-    // so the stretching arms and the posts stay in view (and clear of the LAUNCH button
-    // below), more the further back you've walked.
-    const want = launch.gripping || launch.released ? 0.35 + 0.65 * Math.min(1, launch.back / PULL_DIST) : 0
-    stretchView += (want - stretchView) * (1 - Math.exp(-6 * delta))
-    _target.set(p.x, p.y + LOOK_HEIGHT - 1.3 * stretchView, p.z)
+    _target.set(p.x, p.y + LOOK_HEIGHT, p.z)
 
     // Spherical -> cartesian. yaw 0 puts the camera south of the player, looking north.
-    const yaw = runtime.camera.yaw + 0.75 * stretchView
-    const pitch = runtime.camera.pitch + 0.16 * stretchView
-    const distance = runtime.camera.distance + 1.5 * stretchView
+    const yaw = runtime.camera.yaw
+    const pitch = runtime.camera.pitch
+    const distance = runtime.camera.distance
     const horizontal = Math.cos(pitch) * distance
     _desired.set(
       _target.x + Math.sin(yaw) * horizontal,
@@ -151,7 +142,7 @@ export function FollowCamera() {
       _target.z + Math.cos(yaw) * horizontal,
     )
 
-    // After a slide the camera is far down the hill; jump back rather than swoop.
+    // After a ride the camera is far down the mountain; jump back rather than swoop.
     if (runtime.camera.snap) {
       runtime.camera.snap = false
       initialised.current = false

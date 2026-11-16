@@ -1,16 +1,50 @@
-# React + Vite
+# Bike Hill Rush (client)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + three.js (react-three-fiber) + zustand, built with Vite. The rules live in
+`../shared` (shared with the server); this is the rendering, input and UI.
 
-Currently, two official plugins are available:
+```bash
+npm install
+npm run dev          # local dev (needs the local Boxity stack; ?offline plays without a server)
+npm run build        # production build to dist/
+npm run lint
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+URL flags: `?offline` (play against the in-browser stand-in server, saves to localStorage),
+`?debug` (exposes `window.__pp` and renderer stats on `window.__ppPerf`), `?perf` (dev only:
+the r3f-perf overlay).
 
-## React Compiler
+## Controls
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Action | Keyboard | Touch |
+|---|---|---|
+| Steer | A / D or ← / → | the arrow buttons |
+| Boost | Shift | BOOST |
+| Brake (lean back in the air) | S / ↓ | BRAKE |
+| Jump (lean forward in the air) | Space (W / ↑ leans forward) | JUMP |
+| Camera (chase / far / first person) | C or CAM | CAM |
+| End ride | END | END |
 
-## Expanding the ESLint configuration
+In the lobby: walk with WASD / the joystick, walk into the START gate or press PLAY. Walk into
+the GARAGE to tune your bikes; the WORLDS tile travels to Frost Ridge once Pine Peak is finished.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Where things are
+
+- `src/game/ride/` - the ride: `rideControl.js` (state machine, talks to the server),
+  `ridePhysics.js` (bike physics on the road), `Ride.jsx` (the lazily loaded chunk: road
+  chunks, obstacles, coins, scenery, your bike, chase camera), `trackMesh.js` (geometry),
+  `bikeModels.js` (the 24 bikes), `windowed.js` (distance-windowed instancing).
+- `src/game/world/` - the lobby (mountain top, START gate, bike shop, garage, portal, boards).
+- `src/ui/ride/` - the ride HUD and the results screen; `src/ui/hud`, `src/ui/panels` - the
+  lobby HUD and menus.
+- `../shared/track.js` - the seeded road (centreline, hills, obstacles, ramps, coins) and the
+  speed model; `../shared/balance.js` - every tunable number;
+  `../scripts/balance-sim.mjs` - prints the pacing after a balance change.
+
+## Performance
+
+Quality presets (LOW / MEDIUM / HIGH) in `src/store/quality.js`; phones and ≤ 4-core
+machines start on LOW and the FPS monitor drops presets / resolution under 45 FPS. No
+physics engine (0 rigid bodies), no textures over 1024 px (512 px on LOW), everything
+repeated is instanced, the road is built in 80 m chunks and drawn only within view
+distance, props are windowed around the rider.

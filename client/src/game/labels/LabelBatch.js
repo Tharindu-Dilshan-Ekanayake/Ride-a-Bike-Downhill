@@ -12,7 +12,7 @@ import {
 import { iconUrl } from '../../ui/icons'
 
 /**
- * Floating world text ("FREE x1 Power", "World 2 - Needs 2.5M Power", prices...).
+ * Floating world text (bike names and prices, "FROST RIDGE - 2 Rebirths + 250K Coins"...).
  *
  * Every label is drawn once into a shared canvas atlas and shown as a camera-facing
  * quad; all quads of one atlas page are a single mesh. So the whole lobby's labels cost

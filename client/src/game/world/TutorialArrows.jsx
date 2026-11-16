@@ -2,8 +2,8 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import { Matrix4, Quaternion, Vector3 } from 'three'
 
-import { TUTORIAL } from '@shared/balance'
-import { EGG_STANDS, groundHeightAt, PAD_RADIUS, PAD_X, padCenterZ, ROLL_ZONE, TIRE_STANDS } from '@shared/world'
+import { BIKES, TUTORIAL } from '@shared/balance'
+import { BIKE_STANDS, groundHeightAt, RIDE_ZONE } from '@shared/world'
 
 import { getGame } from '../../store/game'
 import { createToyInstances, PropBuilder } from '../blocks'
@@ -15,12 +15,27 @@ const SPACING = 2.4
 /** Stop drawing arrows this close to the goal. */
 const ARRIVED = 3.5
 
-/** Ground point each tutorial step leads to. */
-const TARGETS = {
-  roll: { x: 0, z: (ROLL_ZONE.minZ + ROLL_ZONE.maxZ) / 2 },
-  pad0: { x: PAD_X, z: padCenterZ(0), reach: PAD_RADIUS - 0.5 },
-  tires: { x: TIRE_STANDS[1].x, z: TIRE_STANDS[1].z },
-  eggs: { x: EGG_STANDS[0].x, z: EGG_STANDS[0].z - 3.5 },
+/** The START gate: the middle of the ride zone. */
+const GATE = { x: (RIDE_ZONE.minX + RIDE_ZONE.maxX) / 2, z: (RIDE_ZONE.minZ + RIDE_ZONE.maxZ) / 2, reach: 3 }
+/** Scratch target for the bike shop step (the next bike's stand), reused every frame. */
+const nextStand = { x: 0, z: 0, reach: 2.6 }
+
+/**
+ * Ground point the current tutorial step leads to, or null: the START gate, or the stand
+ * of the next bike you don't own yet. (The upgrades step is the HUD's cards: no arrow.)
+ */
+function targetFor(step, profile) {
+  if (!step) return null
+  if (step.target === 'start') return GATE
+  if (step.target === 'bikes') {
+    for (let i = 0; i < BIKES.length; i += 1) {
+      if (profile.bikes.includes(BIKES[i].id)) continue
+      nextStand.x = BIKE_STANDS[i].x
+      nextStand.z = BIKE_STANDS[i].z
+      return nextStand
+    }
+  }
+  return null
 }
 
 const _m = new Matrix4()
@@ -39,8 +54,9 @@ function chevronGeometry() {
 }
 
 /**
- * Orange chevrons on the ground leading to the current tutorial goal, as in the
- * reference. They march towards the target and disappear once you get there.
+ * Orange chevrons on the ground leading to the current tutorial goal: the START gate,
+ * then the next bike in the shop. They march towards the target and disappear once you
+ * get there (and while you're out on a ride).
  */
 export function TutorialArrows() {
   const ref = useRef(null)
@@ -60,11 +76,10 @@ export function TutorialArrows() {
   useFrame((state) => {
     const instanced = ref.current
     if (!instanced) return
-    const { profile, roll } = getGame()
-    const step = TUTORIAL[profile.tutorialStep]
-    const target = step && TARGETS[step.target]
+    const { profile, ride } = getGame()
+    const target = targetFor(TUTORIAL[profile.tutorialStep], profile)
     const player = runtime.player.position
-    if (!target || roll || runtime.camera.mode !== 'follow') {
+    if (!target || ride || runtime.camera.mode !== 'follow') {
       instanced.count = 0
       return
     }
@@ -84,8 +99,8 @@ export function TutorialArrows() {
     for (let d = 1.6 + offset; d < dist - 1 && count < MAX_CHEVRONS; d += SPACING) {
       const x = player.x + ux * d
       const z = player.z + uz * d
-      // Over the pads and ball-shop stages, not under them, and well clear of everything
-      // lying on the floor (field lines and decals 0.03-0.04 up, the treadmills' rails 0.2).
+      // Over the bike stands, not under them, and well clear of everything lying on the
+      // floor (painted decals 0.04 up, the start line and chevrons up to 0.1).
       _p.set(x, groundHeightAt(x, z) + 0.15, z)
       // Fade in near the player, shrink near the goal - in plan only, so their height
       // above the floor never changes.

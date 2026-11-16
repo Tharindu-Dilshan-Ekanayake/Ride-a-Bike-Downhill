@@ -1,6 +1,5 @@
 import { Vector3 } from 'three'
 
-import { createRideState } from '../game/roll/path'
 import { runtime } from '../game/runtime'
 import { getGame } from '../store/game'
 
@@ -8,6 +7,10 @@ import { getGame } from '../store/game'
  * Other players, as the network last described them. Network callbacks write here;
  * the renderer reads it each frame and interpolates between snapshots, drawing
  * everyone ~110 ms in the past so 10 Hz updates still move smoothly.
+ *
+ * In the lobby a player is a world position; out on the road (`riding`) they're a road
+ * point - metre along, metres across, height above the road - which the renderer turns
+ * into a world position on the shared road (track.js), so they ride down it with you.
  */
 
 /** sessionId -> remote player */
@@ -37,20 +40,20 @@ export function upsertRemotePlayer(sessionId, state) {
       yaw: state.rotY,
       speed: 0,
       anim: 'idle',
-      tireId: 'bicycle',
+      bikeId: '',
+      world: 0,
       /** Their avatar's outfit, parsed from `look`; `lookKey` is the raw string. */
       look: null,
       lookKey: '',
-      petIds: [],
-      /** Follow state per equipped pet, grown as needed and reused. */
-      pets: [],
       walkPhase: 0,
-      /** Their launch replayed down the runway (RemotePlayers fills it in while `flying`). */
-      flight: createRideState(),
-      flying: false,
-      pulling: false,
+      /** On the road: snapshots of their road point, and where they are now (interpolated). */
+      riding: false,
+      rideSnaps: [],
+      ride: { m: 0, x: 0, h: 0, yaw: 0, state: 'ride', speed: 0, pedal: 0 },
+      /** Their bike's world position and turn this frame, worked out by RemotePlayers. */
+      bikePosition: new Vector3(),
+      bikeHeading: 0,
     }
-    // Its own point: while they fly it follows them down the runway (RemotePlayers).
     r.shadow = { position: r.position.clone(), size: 1.1, visible: true }
     runtime.shadowCasters.add(r.shadow)
     remotePlayers.set(sessionId, r)
@@ -58,8 +61,8 @@ export function upsertRemotePlayer(sessionId, state) {
   r.name = state.name
   r.uid = state.uid || ''
   r.anim = state.anim
-  r.tireId = state.tireId
-  r.level = state.level
+  r.bikeId = state.bikeId
+  r.world = state.world || 0
   r.rebirths = state.rebirths
   if (state.look !== r.lookKey) {
     r.lookKey = state.look
@@ -69,13 +72,19 @@ export function upsertRemotePlayer(sessionId, state) {
       r.look = null
     }
   }
-  r.petIds = [...state.petIds]
-  while (r.pets.length < r.petIds.length) {
-    r.pets.push({ id: '', position: r.position.clone(), yaw: 0, hop: 0 })
+  const now = performance.now()
+  if (state.riding) {
+    if (!r.riding) r.rideSnaps.length = 0
+    const last = r.rideSnaps[r.rideSnaps.length - 1]
+    if (!last || last.m !== state.rm || last.x !== state.rx || last.h !== state.rh || last.s !== state.rstate) {
+      r.rideSnaps.push({ t: now, m: state.rm, x: state.rx, h: state.rh, r: state.ryaw, s: state.rstate })
+      if (r.rideSnaps.length > MAX_SNAPSHOTS) r.rideSnaps.shift()
+    }
   }
+  r.riding = Boolean(state.riding)
   const last = r.snaps[r.snaps.length - 1]
   if (!last || last.x !== state.x || last.y !== state.y || last.z !== state.z || last.r !== state.rotY) {
-    r.snaps.push({ t: performance.now(), x: state.x, y: state.y, z: state.z, r: state.rotY })
+    r.snaps.push({ t: now, x: state.x, y: state.y, z: state.z, r: state.rotY })
     if (r.snaps.length > MAX_SNAPSHOTS) r.snaps.shift()
   }
 }
@@ -94,13 +103,10 @@ function dropRemotePlayer(sessionId) {
   const r = remotePlayers.get(sessionId)
   if (!r) return
   runtime.shadowCasters.delete(r.shadow)
-  runtime.ghostRolls.delete(sessionId)
   remotePlayers.delete(sessionId)
 }
 
 export function clearRemotePlayers() {
   for (const id of [...remotePlayers.keys()]) removeRemotePlayer(id)
   latest.clear()
-  runtime.remotePets.length = 0
-  runtime.ghostRolls.clear()
 }

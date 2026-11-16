@@ -10,19 +10,14 @@ import { RENDER_SCALES, useQuality } from '../store/quality'
 import ErrorBoundary from '../ui/ErrorBoundary'
 import BlobShadows from './BlobShadows'
 import FollowCamera from './FollowCamera'
-import GainFX from './fx/GainFX'
 import WorldLabels from './labels/WorldLabels'
 import { prepareAudio } from '../audio/sfx'
-import { queueAllPetIcons } from './pets/petIcons'
-import Pets, { RewardCrab, SphinxShowcase } from './pets/Pets'
 import RemoteAvatars from './remote/RemoteAvatars'
 import RemotePlayers from './remote/RemotePlayers'
 import Particles from './fx/Particles'
 import Leaderboards from './world/Leaderboards'
-import TireShop from './world/TireShop'
-import EggDisplays from './world/EggDisplays'
+import BikeShop from './world/BikeShop'
 import Portal from './world/Portal'
-import SecretStar from './world/SecretStar'
 import TutorialArrows from './world/TutorialArrows'
 import Lighting from './Lighting'
 import PerfProbe from './PerfProbe'
@@ -31,7 +26,6 @@ import ShaderWarmup from './ShaderWarmup'
 import { FOG, SKY } from './sceneStyle'
 import Sky from './Sky'
 import World from './world/World'
-import LaunchReach from './world/LaunchReach'
 import { showLobbySky } from './worldLook'
 
 // r3f-perf is a dev-only overlay (?perf in the URL). The DEV check is static, so the
@@ -41,9 +35,9 @@ const DevPerf = import.meta.env.DEV
   : null
 const showDevPerf = import.meta.env.DEV && new URLSearchParams(window.location.search).has('perf')
 
-// The runway is its own chunk, fetched once the lobby is on screen so it never delays
-// time-to-playable.
-const Roll = lazy(() => import('./roll/Roll'))
+// The mountain road and the ride are their own chunk, fetched once the lobby is on
+// screen so they never delay time-to-playable.
+const Ride = lazy(() => import('./ride/Ride'))
 
 /**
  * Fires `onFirstFrame` after the renderer has actually drawn once.
@@ -61,10 +55,7 @@ function FirstFrameSignal({ onFirstFrame }) {
   return null
 }
 
-/**
- * The world you're in: its lobby sky (and fog) now, and a track rebuilt with its stages
- * (Roll is keyed on it).
- */
+/** The world you're in: its lobby sky (and fog); the ride rebuilds its road for it. */
 function WorldSky({ world }) {
   const scene = useThree((s) => s.scene)
   useEffect(() => {
@@ -86,27 +77,27 @@ function ViewDistance({ far }) {
 
 /**
  * The camera's vertical field of view for a screen `aspect` wide: 60 degrees on a
- * landscape screen; wider on one held upright, so the runway, the pull-up bars and the arms
- * still fit across a phone in portrait instead of being cropped to a narrow slit.
+ * landscape screen; wider on one held upright, so the road and the lobby still fit
+ * across a phone in portrait instead of being cropped to a narrow slit.
  */
 const fovForAspect = (aspect) => (aspect >= 1 ? 60 : Math.min(84, 60 / Math.sqrt(Math.max(0.3, aspect))))
 
 /**
  * Keeps the field of view right for the screen's shape as the phone turns. Left alone
- * while you fly (Roll.jsx animates the lens then, from this as its base), and put
- * right again once the launch is over.
+ * while you ride (Ride.jsx widens the lens with speed, from this as its base), and put
+ * right again once the ride is over.
  */
 function AspectFov() {
   const get = useThree((s) => s.get)
   const width = useThree((s) => s.size.width)
   const height = useThree((s) => s.size.height)
-  const rolling = useGame((s) => Boolean(s.roll))
+  const riding = useGame((s) => Boolean(s.ride))
   useEffect(() => {
-    if (rolling) return
+    if (riding) return
     const { camera } = get()
     camera.fov = fovForAspect(width / Math.max(1, height))
     camera.updateProjectionMatrix()
-  }, [get, width, height, rolling])
+  }, [get, width, height, riding])
   return null
 }
 
@@ -131,6 +122,13 @@ export function GameScene({ onReady }) {
   const world = useGame((s) => s.profile.world)
 
   const [warmedUp, setWarmedUp] = useState(false)
+  /**
+   * The ride's chunk (and the road it builds) mounts at an idle moment once the lobby is
+   * up - not in the same breath as the rest of the start-up work, which made a slow
+   * phone's first seconds stutter - or straight away if a ride is asked for first.
+   */
+  const [rideIdle, setRideIdle] = useState(false)
+  const riding = useGame((s) => Boolean(s.ride))
   const [firstFrame, setFirstFrame] = useState(false)
   const [contextKey, setContextKey] = useState(0)
   const [contextLost, setContextLost] = useState(false)
@@ -159,14 +157,15 @@ export function GameScene({ onReady }) {
     performance.mark('pp:ready')
     game.loadingEnd()
     onReady?.()
-    // Nothing on screen needs these yet, so they wait until the game is up: the pet
-    // portraits (made one a frame, read back asynchronously) and, at the first idle
-    // moment, the audio engine - built on the first tap instead it froze that tap, and a
-    // tap that beats it there still builds it (sfx.unlock). Before, both ran behind the
-    // loading screen: ~0.9 s of a slow phone's start-up.
-    queueAllPetIcons()
+    // Nothing on screen needs it yet, so the audio engine waits until the game is up (at
+    // the first idle moment): built on the first tap instead it froze that tap, and a tap
+    // that beats it there still builds it (sfx.unlock).
     if ('requestIdleCallback' in window) requestIdleCallback(prepareAudio, { timeout: 1500 })
     else setTimeout(prepareAudio, 200)
+    setTimeout(() => {
+      if ('requestIdleCallback' in window) requestIdleCallback(() => setRideIdle(true), { timeout: 2500 })
+      else setRideIdle(true)
+    }, 1200)
   }, [warmedUp, firstFrame, game, onReady])
 
   // A lost context (GPU reset, too many tabs, backgrounded on mobile) is recovered by
@@ -250,26 +249,19 @@ export function GameScene({ onReady }) {
         <WorldSky world={world} />
         <Lighting />
         <World />
-        <LaunchReach />
         <WorldLabels />
-        <TireShop />
-        <EggDisplays />
-        <SecretStar />
+        <BikeShop />
         <Portal />
         <Leaderboards />
         <TutorialArrows />
         <Particles />
-        <SphinxShowcase />
-        <RewardCrab />
-        <Pets />
         <RemotePlayers />
         <RemoteAvatars />
         <Player />
         <BlobShadows />
-        <GainFX />
-        {warmedUp && firstFrame && (
+        {(rideIdle || riding) && (
           <Suspense fallback={null}>
-            <Roll key={world} />
+            <Ride />
           </Suspense>
         )}
 
